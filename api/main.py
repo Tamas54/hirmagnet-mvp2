@@ -11,7 +11,7 @@ import os
 import json
 
 # Database imports
-from database.db import get_db, create_tables
+from database.db import get_db, create_tables, SessionLocal
 from database.models import Article, User, SocialPost, SiteStats, ProcessingLog
 
 # ROUTES IMPORT ÉS INCLUDE
@@ -340,6 +340,48 @@ async def health_check(db: Session = Depends(get_db)):
                 "Expires": "0"
             }
         )
+
+# === ADMIN & HEALTH ENDPOINTS ===
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Test database connection
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)[:50]}"
+    
+    return {
+        "status": "healthy",
+        "environment": os.environ.get("RENDER", "development"),
+        "database": db_status,
+        "version": "2.0.0"
+    }
+
+@app.post("/api/admin/generate-content")
+async def trigger_content_generation():
+    """Manual content generation trigger for production"""
+    try:
+        import subprocess
+        import sys
+        
+        # Background process indítása
+        process = subprocess.Popen([
+            sys.executable, 
+            "test_master.py", 
+            "--mode", "quick"
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        return {
+            "status": "Content generation started", 
+            "process_id": process.pid,
+            "message": "Check /api/articles in 2-3 minutes for new content"
+        }
+    except Exception as e:
+        return {"error": f"Failed to start content generation: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn

@@ -5,7 +5,23 @@ from database.models import Base
 import os
 
 # Adatbázis engine létrehozása
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+if os.environ.get("RENDER"):
+    # Production: minimális connection pool for SQLite
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=1,
+        max_overflow=0,
+        pool_pre_ping=True,
+        connect_args={
+            "check_same_thread": False,
+            "timeout": 30
+        }
+    )
+    print("🚀 Production database config loaded")
+else:
+    # Development: normál konfiguráció
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    print("🔧 Development database config loaded")
 
 # Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

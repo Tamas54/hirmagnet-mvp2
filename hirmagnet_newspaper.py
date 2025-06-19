@@ -282,11 +282,24 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    # Render deployment
     if os.environ.get("RENDER"):
+        # RENDER PRODUCTION MODE
+        print("🚀 HírMagnet RENDER Production Mode")
+        print("📱 Web API only - No content generation on startup")
+        print("💡 Use /api/admin/generate-content for manual content creation")
+        
+        # Csak FastAPI indítása
         port = int(os.environ.get("PORT", 8000))
         import uvicorn
         from api.main import app
-        uvicorn.run(app, host="0.0.0.0", port=port)
+        
+        uvicorn.run(
+            app, 
+            host="0.0.0.0", 
+            port=port,
+            log_level="info"
+        )
     else:
+        # DEVELOPMENT MODE - teljes funkcionalitás
+        print("🔧 Development mode - Full functionality")
         sys.exit(main())
