@@ -281,15 +281,48 @@ def main():
     
     return 0
 
+def content_generation_background():
+    """Background content generation for production"""
+    import time
+    print("🔄 Content generation loop started...")
+    
+    while True:
+        try:
+            print("📝 Starting content generation cycle...")
+            # Ugyanaz a logika mint a generate_content() függvényben
+            import subprocess
+            import sys
+            
+            cmd = [sys.executable, "test_master.py", "--mode", "quick", "--generate-content"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+            
+            if result.returncode == 0:
+                print("✅ Content generation completed successfully")
+            else:
+                print(f"❌ Content generation failed: {result.stderr}")
+            
+            # Várj 30 percet
+            print("⏰ Waiting 30 minutes for next cycle...")
+            time.sleep(1800)  # 30 * 60 = 1800 seconds
+            
+        except Exception as e:
+            print(f"❌ Content generation error: {e}")
+            time.sleep(300)  # 5 perc várakozás hiba esetén
+
 if __name__ == "__main__":
     if os.environ.get("RENDER"):
-        # RENDER PRODUCTION MODE
+        # RENDER PRODUCTION MODE - FastAPI + Content Generation
         print("🚀 HírMagnet RENDER Production Mode")
-        print("📱 Web API only - No content generation on startup")
-        print("💡 Use /api/admin/generate-content for manual content creation")
+        print("📱 FastAPI server + Background content generation")
         
-        # Csak FastAPI indítása
         port = int(os.environ.get("PORT", 8000))
+        
+        # Background content generation indítása
+        content_thread = threading.Thread(target=content_generation_background, daemon=True)
+        content_thread.start()
+        print("✅ Background content generation started")
+        
+        # FastAPI indítása
         import uvicorn
         from api.main import app
         
