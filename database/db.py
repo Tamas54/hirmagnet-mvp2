@@ -6,16 +6,15 @@ import os
 
 # Adatbázis engine létrehozása
 if os.environ.get("RENDER"):
-    # Production: minimális connection pool for SQLite
+    # RENDER: Connection pool NÉLKÜL - egyszerű SQLite
     engine = create_engine(
         DATABASE_URL,
-        pool_size=1,
-        max_overflow=0,
-        pool_pre_ping=True,
         connect_args={
             "check_same_thread": False,
-            "timeout": 30
-        }
+            "timeout": 60
+        },
+        poolclass=None,  # !!!!! FONTOS: NINCS CONNECTION POOL
+        echo=False
     )
     print("🚀 Production database config loaded")
 else:
