@@ -368,12 +368,13 @@ async def trigger_content_generation():
         import subprocess
         import sys
         
-        # Background process indítása
+        # Background process indítása - FIXED: --generate-content flag + environment variables
         process = subprocess.Popen([
             sys.executable, 
             "test_master.py", 
-            "--mode", "quick"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            "--mode", "quick",
+            "--generate-content"
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ)
         
         return {
             "status": "Content generation started", 

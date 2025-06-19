@@ -152,6 +152,15 @@ def _get_dispositions_from_channels(orchestrator, channels):
 async def run_master_test(mode: str, force_scrape: bool, generate_content: bool):
     """Az univerzális teszt-szkript fő logikája."""
     print(f"🎯 Operation 'Meisterstück' indul... Módusz: '{mode.upper()}' | Force Scrape: {force_scrape} | Generate Content: {generate_content}")
+    
+    # DEBUG: API kulcsok ellenőrzése
+    print("🔧 API kulcsok ellenőrzése...")
+    import os
+    openai_key = os.getenv('OPENAI_API_KEY')
+    gemini_key = os.getenv('GEMINI_API_KEY')
+    print(f"🔧 OPENAI_API_KEY: {'✅ SET' if openai_key else '❌ MISSING'}")
+    print(f"🔧 GEMINI_API_KEY: {'✅ SET' if gemini_key else '❌ MISSING'}")
+    
     db = get_db_session()
     
     # 1. LÉPÉS: DINAMIKUS HÍRGYŰJTÉS
@@ -248,10 +257,13 @@ async def run_master_test(mode: str, force_scrape: bool, generate_content: bool)
         
         # Az orchestrator elvégzi az Editorial AI feldolgozást + generálást
         article_ids_to_track = [art.id for art in articles_for_orchestrator]
+        print(f"🔧 Database írás - {len(articles_for_orchestrator)} cikk az orchestrator-nak átadva...")
         await orchestrator.run_full_process(articles_for_orchestrator)
         
         print("✅ Cikk-generálási fázis befejezve. Eredmények lekérdezése...")
         processed_articles = db.query(Article).filter(Article.id.in_(article_ids_to_track)).all()
+        processed_count = len([art for art in processed_articles if art.ai_title or art.ai_summary])
+        print(f"🔧 Új cikkek száma: {processed_count}")
         print_generation_report(processed_articles)
     
     db.close()

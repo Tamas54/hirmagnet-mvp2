@@ -85,7 +85,8 @@ class HirMagnetNewspaper:
             print(f"🔧 Python executable: {sys.executable}")
             print(f"🔧 Current time: {datetime.now()}")
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+            # FIXED: Pass environment variables to subprocess
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=900, env=os.environ)
             
             # DETALJEZETT DEBUG
             print(f"🔧 RETURN CODE: {result.returncode}")
