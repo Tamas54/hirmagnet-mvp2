@@ -196,7 +196,7 @@ class HirMagnet {
             this.debugLog(`Fetching: ${url} (retry: ${retryCount})`);
             
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
             const response = await fetch(url, {
                 signal: controller.signal,
@@ -252,7 +252,7 @@ class HirMagnet {
     async loadTrendingRobust(retryCount = 0) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
             const response = await fetch('/api/trending?limit=10', {
                 signal: controller.signal,
@@ -290,7 +290,7 @@ class HirMagnet {
     async loadDashboardDataRobust(retryCount = 0) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
             const response = await fetch('/api/dashboard-data', {
                 signal: controller.signal,
@@ -323,7 +323,7 @@ class HirMagnet {
     async loadCurrentNewsRobust() {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
             const response = await fetch('/api/latest?limit=6', {
                 signal: controller.signal,
