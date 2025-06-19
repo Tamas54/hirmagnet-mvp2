@@ -283,24 +283,70 @@ def main():
     return 0
 
 def content_generation_background():
-    """Background content generation for production"""
+    """Background content generation for production - RENDER OPTIMIZED"""
     import time
+    import asyncio
     print("🔄 Content generation loop started...")
     
     while True:
         try:
             print("📝 Starting content generation cycle...")
-            # Ugyanaz a logika mint a generate_content() függvényben
-            import subprocess
-            import sys
             
-            cmd = [sys.executable, "test_master.py", "--mode", "quick", "--generate-content"]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
-            
-            if result.returncode == 0:
-                print("✅ Content generation completed successfully")
-            else:
-                print(f"❌ Content generation failed: {result.stderr}")
+            # RENDER FIX: Try direct import approach first, fallback to subprocess
+            try:
+                print("🔧 RENDER APPROACH 1: Direct import method")
+                # Import test_master directly and call its function
+                import sys
+                sys.path.append(os.getcwd())
+                from test_master import run_master_test
+                
+                # Run content generation directly
+                print("🔧 Running direct content generation...")
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                result = loop.run_until_complete(run_master_test("quick", False, True))
+                loop.close()
+                print("✅ Direct content generation completed successfully")
+                
+            except Exception as direct_error:
+                print(f"🔧 RENDER APPROACH 1 FAILED: {direct_error}")
+                print("🔧 RENDER APPROACH 2: Subprocess method")
+                
+                # Fallback to subprocess with enhanced debugging
+                import subprocess
+                import sys
+                
+                cmd = [sys.executable, "test_master.py", "--mode", "quick", "--generate-content"]
+                print(f"🔧 RENDER DEBUG - Command: {' '.join(cmd)}")
+                print(f"🔧 RENDER DEBUG - Working dir: {os.getcwd()}")
+                print(f"🔧 RENDER DEBUG - Python path: {sys.executable}")
+                
+                # Check if test_master.py exists
+                if os.path.exists("test_master.py"):
+                    print("🔧 RENDER DEBUG - test_master.py exists")
+                else:
+                    print("❌ RENDER DEBUG - test_master.py NOT FOUND!")
+                
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=900, env=os.environ)
+                
+                # RENDER FIX: Comprehensive error reporting
+                print(f"🔧 RENDER DEBUG - Return code: {result.returncode}")
+                print(f"🔧 RENDER DEBUG - Stdout length: {len(result.stdout)} chars")
+                print(f"🔧 RENDER DEBUG - Stderr length: {len(result.stderr)} chars")
+                
+                if result.stdout:
+                    print(f"🔧 RENDER DEBUG - Stdout (first 2000 chars):")
+                    print(result.stdout[:2000])
+                
+                if result.stderr:
+                    print(f"🔧 RENDER DEBUG - Stderr (full):")
+                    print(result.stderr)
+                
+                if result.returncode == 0:
+                    print("✅ Subprocess content generation completed successfully")
+                else:
+                    print(f"❌ Content generation failed with return code: {result.returncode}")
+                    print(f"❌ Error details: {result.stderr}")
             
             # Várj 30 percet
             print("⏰ Waiting 30 minutes for next cycle...")
@@ -308,6 +354,8 @@ def content_generation_background():
             
         except Exception as e:
             print(f"❌ Content generation error: {e}")
+            import traceback
+            print(f"❌ Traceback: {traceback.format_exc()}")
             time.sleep(300)  # 5 perc várakozás hiba esetén
 
 if __name__ == "__main__":

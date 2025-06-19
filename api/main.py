@@ -363,25 +363,59 @@ async def health_check():
 
 @app.post("/api/admin/generate-content")
 async def trigger_content_generation():
-    """Manual content generation trigger for production"""
+    """Manual content generation trigger for production - RENDER OPTIMIZED"""
     try:
-        import subprocess
-        import sys
-        
-        # Background process indítása - FIXED: --generate-content flag + environment variables
-        process = subprocess.Popen([
-            sys.executable, 
-            "test_master.py", 
-            "--mode", "quick",
-            "--generate-content"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ)
-        
-        return {
-            "status": "Content generation started", 
-            "process_id": process.pid,
-            "message": "Check /api/articles in 2-3 minutes for new content"
-        }
+        # RENDER FIX: Try direct import approach first for better reliability
+        try:
+            print("🔧 MANUAL TRIGGER: Direct import method")
+            import sys
+            import asyncio
+            sys.path.append(os.getcwd())
+            from test_master import run_master_test
+            
+            # Run content generation directly in background task
+            async def run_generation():
+                try:
+                    await run_master_test("quick", False, True)
+                    print("✅ Manual trigger: Direct generation completed")
+                except Exception as e:
+                    print(f"❌ Manual trigger: Direct generation failed: {e}")
+            
+            # Start background task
+            asyncio.create_task(run_generation())
+            
+            return {
+                "status": "Content generation started (direct method)", 
+                "method": "direct_import",
+                "message": "Check /api/articles in 2-3 minutes for new content"
+            }
+            
+        except Exception as direct_error:
+            print(f"🔧 MANUAL TRIGGER: Direct method failed: {direct_error}")
+            print("🔧 MANUAL TRIGGER: Falling back to subprocess")
+            
+            # Fallback to subprocess
+            import subprocess
+            import sys
+            
+            process = subprocess.Popen([
+                sys.executable, 
+                "test_master.py", 
+                "--mode", "quick",
+                "--generate-content"
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ)
+            
+            return {
+                "status": "Content generation started (subprocess method)", 
+                "process_id": process.pid,
+                "method": "subprocess",
+                "message": "Check /api/articles in 2-3 minutes for new content"
+            }
+            
     except Exception as e:
+        import traceback
+        print(f"❌ Manual trigger failed completely: {e}")
+        print(f"❌ Traceback: {traceback.format_exc()}")
         return {"error": f"Failed to start content generation: {str(e)}"}
 
 if __name__ == "__main__":

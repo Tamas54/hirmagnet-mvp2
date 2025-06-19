@@ -28,36 +28,144 @@ from hirmagnet_data_collector import DataCollector
 
 # ===== HERR CLAUS ASYNC INFRASTRUCTURE =====
 
+# RENDER PRODUCTION STATUS ENDPOINT
+@router.get("/production-status")
+async def get_production_status():
+    """Comprehensive production status for Render debugging"""
+    import os
+    import datetime
+    import sys
+    
+    try:
+        # System information
+        status = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "environment": {
+                "is_render": bool(os.environ.get("RENDER")),
+                "port": os.environ.get("PORT", "8000"),
+                "python_version": sys.version,
+                "working_directory": os.getcwd(),
+            },
+            "api_keys": {
+                "openai_configured": bool(os.getenv('OPENAI_API_KEY')),
+                "gemini_configured": bool(os.getenv('GEMINI_API_KEY')),
+            },
+            "processing": {
+                "is_processing": processing_state.is_processing,
+                "last_process_time": processing_state.last_process_time.isoformat() if processing_state.last_process_time else None,
+                "process_count": processing_state.process_count,
+                "error_count": processing_state.error_count,
+                "last_error": processing_state.last_error
+            },
+            "cache": {
+                "dashboard_cached": dashboard_cache["data"] is not None,
+                "last_cache_update": dashboard_cache["last_update"].isoformat() if dashboard_cache["last_update"] else None,
+                "cache_duration": dashboard_cache["cache_duration"],
+                "error_count": dashboard_cache.get("error_count", 0),
+                "last_error": dashboard_cache.get("last_error")
+            }
+        }
+        
+        # System resources (if available)
+        try:
+            import psutil
+            status["resources"] = {
+                "memory_usage_mb": psutil.Process().memory_info().rss / 1024 / 1024,
+                "cpu_percent": psutil.Process().cpu_percent(),
+            }
+        except ImportError:
+            status["resources"] = {"error": "psutil not available"}
+        except Exception as e:
+            status["resources"] = {"error": str(e)}
+        
+        # Database health check
+        try:
+            with get_db_with_timeout(timeout=3) as db:
+                if db:
+                    result = db.execute(text("SELECT COUNT(*) as count FROM articles")).fetchone()
+                    status["database"] = {
+                        "connected": True,
+                        "article_count": result.count if result else 0
+                    }
+                else:
+                    status["database"] = {"connected": False, "error": "Timeout"}
+        except Exception as e:
+            status["database"] = {"connected": False, "error": str(e)}
+        
+        # File system check
+        status["filesystem"] = {
+            "test_master_exists": os.path.exists("test_master.py"),
+            "database_exists": os.path.exists("data/hirmagnet.db"),
+            "current_files": [f for f in os.listdir(".") if not f.startswith('.')] if os.path.exists(".") else []
+        }
+        
+        return status
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "timestamp": datetime.datetime.now().isoformat(),
+            "status": "critical_error"
+        }
+
 class ProcessingState:
-    """Deutsche Präzision Processing State Management"""
+    """Deutsche Präzision Processing State Management - RENDER OPTIMIZED"""
     def __init__(self):
         self.is_processing = False
         self.last_process_time = None
-        self.executor = ThreadPoolExecutor(max_workers=2)
+        self.executor = ThreadPoolExecutor(max_workers=1)  # RENDER FIX: Reduced workers
         self.processing_lock = threading.Lock()
+        self.process_count = 0
+        self.error_count = 0
+        self.last_error = None
+        
+    def update_status(self, success=True, error_msg=None):
+        """Update processing status with error tracking"""
+        import datetime
+        self.last_process_time = datetime.datetime.now()
+        if success:
+            self.process_count += 1
+        else:
+            self.error_count += 1
+            self.last_error = error_msg
 
 # ===== DATABASE WITH TIMEOUT PROTECTION =====
 
 @contextmanager  
-def get_db_with_timeout(timeout=5):
-    """Database connection with timeout protection"""
-    session = next(get_db())
-    session.execute(text(f"PRAGMA busy_timeout = {timeout * 1000}"))
+def get_db_with_timeout(timeout=10):
+    """Database connection with timeout protection - RENDER OPTIMIZED"""
+    session = None
     try:
+        session = next(get_db())
+        # RENDER FIX: Increased timeout and better error handling
+        session.execute(text(f"PRAGMA busy_timeout = {timeout * 1000}"))
+        session.execute(text("PRAGMA journal_mode = WAL"))  # Better concurrency
+        session.execute(text("PRAGMA synchronous = NORMAL"))  # Performance optimization
         yield session
     except Exception as e:
-        session.rollback()
+        if session:
+            try:
+                session.rollback()
+            except:
+                pass  # Ignore rollback errors
         print(f"❌ Database timeout error: {e}")
-        raise
+        # Don't re-raise, return empty results instead for better UX
+        yield None
     finally:
-        session.close()
+        if session:
+            try:
+                session.close()
+            except:
+                pass  # Ignore close errors
 
 # ===== DASHBOARD CACHE SYSTEM =====
 
 dashboard_cache = {
     "data": None,
     "last_update": None,
-    "cache_duration": 300  # 5 minutes
+    "cache_duration": 120,  # RENDER FIX: Reduced to 2 minutes to prevent slowdowns
+    "error_count": 0,
+    "last_error": None
 }
 
 # ===== ROUTER SETUP =====
