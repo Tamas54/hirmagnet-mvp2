@@ -28,7 +28,74 @@ from hirmagnet_data_collector import DataCollector
 
 # ===== HERR CLAUS ASYNC INFRASTRUCTURE =====
 
-# RENDER PRODUCTION STATUS ENDPOINT
+class ProcessingState:
+    """Deutsche Präzision Processing State Management - RENDER OPTIMIZED"""
+    def __init__(self):
+        self.is_processing = False
+        self.last_process_time = None
+        self.executor = ThreadPoolExecutor(max_workers=1)  # RENDER FIX: Reduced workers
+        self.processing_lock = threading.Lock()
+        self.process_count = 0
+        self.error_count = 0
+        self.last_error = None
+        
+    def update_status(self, success=True, error_msg=None):
+        """Update processing status with error tracking"""
+        import datetime
+        self.last_process_time = datetime.datetime.now()
+        if success:
+            self.process_count += 1
+        else:
+            self.error_count += 1
+            self.last_error = error_msg
+
+# ===== DATABASE WITH TIMEOUT PROTECTION =====
+
+@contextmanager  
+def get_db_with_timeout(timeout=10):
+    """Database connection with timeout protection - RENDER OPTIMIZED"""
+    session = None
+    try:
+        session = next(get_db())
+        # RENDER FIX: Increased timeout and better error handling
+        session.execute(text(f"PRAGMA busy_timeout = {timeout * 1000}"))
+        session.execute(text("PRAGMA journal_mode = WAL"))  # Better concurrency
+        session.execute(text("PRAGMA synchronous = NORMAL"))  # Performance optimization
+        yield session
+    except Exception as e:
+        if session:
+            try:
+                session.rollback()
+            except:
+                pass  # Ignore rollback errors
+        print(f"❌ Database timeout error: {e}")
+        # Don't re-raise, return empty results instead for better UX
+        yield None
+    finally:
+        if session:
+            try:
+                session.close()
+            except:
+                pass  # Ignore close errors
+
+# ===== DASHBOARD CACHE SYSTEM =====
+
+dashboard_cache = {
+    "data": None,
+    "last_update": None,
+    "cache_duration": 120,  # RENDER FIX: Reduced to 2 minutes to prevent slowdowns
+    "error_count": 0,
+    "last_error": None
+}
+
+# ===== ROUTER SETUP =====
+router = APIRouter()
+
+# Globális instances
+data_collector = DataCollector()
+processing_state = ProcessingState()
+
+# ===== RENDER PRODUCTION STATUS ENDPOINT =====
 @router.get("/production-status")
 async def get_production_status():
     """Comprehensive production status for Render debugging"""
@@ -107,73 +174,6 @@ async def get_production_status():
             "timestamp": datetime.datetime.now().isoformat(),
             "status": "critical_error"
         }
-
-class ProcessingState:
-    """Deutsche Präzision Processing State Management - RENDER OPTIMIZED"""
-    def __init__(self):
-        self.is_processing = False
-        self.last_process_time = None
-        self.executor = ThreadPoolExecutor(max_workers=1)  # RENDER FIX: Reduced workers
-        self.processing_lock = threading.Lock()
-        self.process_count = 0
-        self.error_count = 0
-        self.last_error = None
-        
-    def update_status(self, success=True, error_msg=None):
-        """Update processing status with error tracking"""
-        import datetime
-        self.last_process_time = datetime.datetime.now()
-        if success:
-            self.process_count += 1
-        else:
-            self.error_count += 1
-            self.last_error = error_msg
-
-# ===== DATABASE WITH TIMEOUT PROTECTION =====
-
-@contextmanager  
-def get_db_with_timeout(timeout=10):
-    """Database connection with timeout protection - RENDER OPTIMIZED"""
-    session = None
-    try:
-        session = next(get_db())
-        # RENDER FIX: Increased timeout and better error handling
-        session.execute(text(f"PRAGMA busy_timeout = {timeout * 1000}"))
-        session.execute(text("PRAGMA journal_mode = WAL"))  # Better concurrency
-        session.execute(text("PRAGMA synchronous = NORMAL"))  # Performance optimization
-        yield session
-    except Exception as e:
-        if session:
-            try:
-                session.rollback()
-            except:
-                pass  # Ignore rollback errors
-        print(f"❌ Database timeout error: {e}")
-        # Don't re-raise, return empty results instead for better UX
-        yield None
-    finally:
-        if session:
-            try:
-                session.close()
-            except:
-                pass  # Ignore close errors
-
-# ===== DASHBOARD CACHE SYSTEM =====
-
-dashboard_cache = {
-    "data": None,
-    "last_update": None,
-    "cache_duration": 120,  # RENDER FIX: Reduced to 2 minutes to prevent slowdowns
-    "error_count": 0,
-    "last_error": None
-}
-
-# ===== ROUTER SETUP =====
-router = APIRouter()
-
-# Globális instances
-data_collector = DataCollector()
-processing_state = ProcessingState()
 
 # ===== AI CONFIGURATION =====
 openai.api_key = os.getenv('OPENAI_API_KEY')
