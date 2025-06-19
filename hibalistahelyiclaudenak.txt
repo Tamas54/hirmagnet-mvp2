@@ -1,0 +1,224 @@
+Using cached apify_shared-1.4.1-py3-none-any.whl (12 kB)
+Using cached appdirs-1.4.4-py2.py3-none-any.whl (9.6 kB)
+Using cached attrs-25.3.0-py3-none-any.whl (63 kB)
+Using cached beautifulsoup4-4.12.2-py3-none-any.whl (142 kB)
+Using cached bs4-0.0.2-py2.py3-none-any.whl (1.2 kB)
+Using cached cachetools-5.5.2-py3-none-any.whl (10 kB)
+Using cached certifi-2025.4.26-py3-none-any.whl (159 kB)
+Using cached charset_normalizer-3.4.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (148 kB)
+Using cached click-8.2.1-py3-none-any.whl (102 kB)
+Using cached cssselect-1.3.0-py3-none-any.whl (18 kB)
+Using cached dateparser-1.2.1-py3-none-any.whl (295 kB)
+Using cached distro-1.9.0-py3-none-any.whl (20 kB)
+Using cached facebook_scraper-0.2.59-py3-none-any.whl (45 kB)
+Using cached requests_html-0.10.0-py3-none-any.whl (13 kB)
+Using cached fake_useragent-2.2.0-py3-none-any.whl (161 kB)
+Using cached fastapi-0.104.1-py3-none-any.whl (92 kB)
+Using cached pydantic-2.11.4-py3-none-any.whl (443 kB)
+Using cached starlette-0.27.0-py3-none-any.whl (66 kB)
+Using cached google_ai_generativelanguage-0.6.15-py3-none-any.whl (1.3 MB)
+Using cached google_api_core-2.24.2-py3-none-any.whl (160 kB)
+Using cached google_auth-2.40.2-py2.py3-none-any.whl (216 kB)
+Using cached googleapis_common_protos-1.70.0-py3-none-any.whl (294 kB)
+Using cached proto_plus-1.26.1-py3-none-any.whl (50 kB)
+Using cached protobuf-5.29.5-cp38-abi3-manylinux2014_x86_64.whl (319 kB)
+Using cached rsa-4.9.1-py3-none-any.whl (34 kB)
+Using cached google_api_python_client-2.170.0-py3-none-any.whl (13.5 MB)
+Using cached google_auth_httplib2-0.2.0-py2.py3-none-any.whl (9.3 kB)
+Using cached httplib2-0.22.0-py3-none-any.whl (96 kB)
+Using cached pyparsing-3.2.3-py3-none-any.whl (111 kB)
+Using cached uritemplate-4.1.1-py2.py3-none-any.whl (10 kB)
+Using cached google_generativeai-0.8.5-py3-none-any.whl (155 kB)
+Using cached greenlet-3.2.2-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (606 kB)
+Using cached grpcio-1.72.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (5.8 MB)
+Using cached grpcio_status-1.71.0-py3-none-any.whl (14 kB)
+Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+Using cached httpcore-1.0.9-py3-none-any.whl (78 kB)
+Using cached httpx-0.28.1-py3-none-any.whl (73 kB)
+Using cached idna-3.10-py3-none-any.whl (70 kB)
+Using cached importlib_metadata-8.7.0-py3-none-any.whl (27 kB)
+Using cached Jinja2-3.1.2-py3-none-any.whl (133 kB)
+Using cached jiter-0.10.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (350 kB)
+Using cached joblib-1.5.1-py3-none-any.whl (307 kB)
+Using cached MarkupSafe-3.0.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (23 kB)
+Using cached more_itertools-10.7.0-py3-none-any.whl (65 kB)
+Using cached numpy-2.3.0-cp313-cp313-manylinux_2_28_x86_64.whl (16.6 MB)
+Using cached oauthlib-3.2.2-py3-none-any.whl (151 kB)
+Using cached openai-1.81.0-py3-none-any.whl (717 kB)
+Using cached typing_extensions-4.13.2-py3-none-any.whl (45 kB)
+Using cached outcome-1.3.0.post0-py2.py3-none-any.whl (10 kB)
+Using cached packaging-25.0-py3-none-any.whl (66 kB)
+Using cached parse-1.20.2-py2.py3-none-any.whl (20 kB)
+Using cached psutil-7.0.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (277 kB)
+Using cached pyasn1-0.6.1-py3-none-any.whl (83 kB)
+Using cached pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+Using cached pydantic_core-2.33.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.0 MB)
+Using cached pyquery-2.0.1-py3-none-any.whl (22 kB)
+Using cached PySocks-1.7.1-py3-none-any.whl (16 kB)
+Using cached python_dateutil-2.8.2-py2.py3-none-any.whl (247 kB)
+Using cached python_dotenv-1.0.0-py3-none-any.whl (19 kB)
+Using cached python_multipart-0.0.6-py3-none-any.whl (45 kB)
+Using cached pytz-2025.2-py2.py3-none-any.whl (509 kB)
+Using cached regex-2024.11.6-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (796 kB)
+Using cached requests_oauthlib-2.0.0-py2.py3-none-any.whl (24 kB)
+Using cached schedule-1.2.0-py2.py3-none-any.whl (11 kB)
+Using cached scikit_learn-1.7.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.5 MB)
+Using cached scipy-1.15.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.3 MB)
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+Using cached sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+Using cached soupsieve-2.7-py3-none-any.whl (36 kB)
+Using cached stripe-12.1.0-py2.py3-none-any.whl (1.6 MB)
+Using cached threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+Using cached tqdm-4.67.1-py3-none-any.whl (78 kB)
+Using cached trio-0.30.0-py3-none-any.whl (499 kB)
+Using cached trio_websocket-0.12.2-py3-none-any.whl (21 kB)
+Using cached tweepy-4.15.0-py3-none-any.whl (99 kB)
+Using cached typing_inspection-0.4.1-py3-none-any.whl (14 kB)
+Using cached tzlocal-5.3.1-py3-none-any.whl (18 kB)
+Using cached uvicorn-0.24.0-py3-none-any.whl (59 kB)
+Using cached w3lib-2.3.1-py3-none-any.whl (21 kB)
+Using cached webdriver_manager-4.0.2-py2.py3-none-any.whl (27 kB)
+Using cached websocket_client-1.8.0-py3-none-any.whl (58 kB)
+Using cached wsproto-1.2.0-py3-none-any.whl (24 kB)
+Using cached zipp-3.22.0-py3-none-any.whl (9.8 kB)
+Using cached requests-2.32.4-py3-none-any.whl (64 kB)
+Using cached feedparser-6.0.11-py3-none-any.whl (81 kB)
+Using cached playwright-1.52.0-py3-none-manylinux1_x86_64.whl (45.1 MB)
+Using cached pyee-13.0.0-py3-none-any.whl (15 kB)
+Using cached selenium-4.33.0-py3-none-any.whl (9.4 MB)
+Using cached urllib3-2.4.0-py3-none-any.whl (128 kB)
+Using cached sqlalchemy-2.0.41-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+Using cached lxml-5.4.0-cp313-cp313-manylinux_2_28_x86_64.whl (4.9 MB)
+Installing collected packages: sortedcontainers, sgmllib3k, pytz, parse, demjson3, appdirs, zipp, websockets, websocket-client, w3lib, urllib3, uritemplate, tzlocal, typing_extensions, tqdm, threadpoolctl, soupsieve, sniffio, six, schedule, regex, python-multipart, python-dotenv, PySocks, pyparsing, pyasn1, psutil, protobuf, packaging, oauthlib, numpy, more-itertools, MarkupSafe, lxml, joblib, jiter, idna, h11, grpcio, greenlet, feedparser, fake-useragent, distro, cssselect, click, charset-normalizer, certifi, cachetools, attrs, apify_shared, annotated-types, aiofiles, wsproto, uvicorn, typing-inspection, SQLAlchemy, scipy, rsa, requests, python-dateutil, pyquery, pyee, pydantic_core, pyasn1_modules, proto-plus, outcome, Jinja2, importlib_metadata, httplib2, httpcore, googleapis-common-protos, beautifulsoup4, anyio, webdriver-manager, trio, stripe, starlette, scikit-learn, requests-oauthlib, pyppeteer, pydantic, playwright, httpx, grpcio-status, google-auth, dateparser, bs4, tweepy, trio-websocket, requests-html, openai, google-auth-httplib2, google-api-core, fastapi, apify_client, selenium, google-api-python-client, facebook-scraper, google-ai-generativelanguage, google-generativeai
+Successfully installed Jinja2-3.1.2 MarkupSafe-3.0.2 PySocks-1.7.1 SQLAlchemy-2.0.41 aiofiles-24.1.0 annotated-types-0.7.0 anyio-3.7.1 apify_client-1.10.0 apify_shared-1.4.1 appdirs-1.4.4 attrs-25.3.0 beautifulsoup4-4.12.2 bs4-0.0.2 cachetools-5.5.2 certifi-2025.4.26 charset-normalizer-3.4.2 click-8.2.1 cssselect-1.3.0 dateparser-1.2.1 demjson3-3.0.6 distro-1.9.0 facebook-scraper-0.2.59 fake-useragent-2.2.0 fastapi-0.104.1 feedparser-6.0.11 google-ai-generativelanguage-0.6.15 google-api-core-2.24.2 google-api-python-client-2.170.0 google-auth-2.40.2 google-auth-httplib2-0.2.0 google-generativeai-0.8.5 googleapis-common-protos-1.70.0 greenlet-3.2.2 grpcio-1.72.1 grpcio-status-1.71.0 h11-0.16.0 httpcore-1.0.9 httplib2-0.22.0 httpx-0.28.1 idna-3.10 importlib_metadata-8.7.0 jiter-0.10.0 joblib-1.5.1 lxml-5.4.0 more-itertools-10.7.0 numpy-2.3.0 oauthlib-3.2.2 openai-1.81.0 outcome-1.3.0.post0 packaging-25.0 parse-1.20.2 playwright-1.52.0 proto-plus-1.26.1 protobuf-5.29.5 psutil-7.0.0 pyasn1-0.6.1 pyasn1_modules-0.4.2 pydantic-2.11.4 pydantic_core-2.33.2 pyee-13.0.0 pyparsing-3.2.3 pyppeteer-0.0.25 pyquery-2.0.1 python-dateutil-2.8.2 python-dotenv-1.0.0 python-multipart-0.0.6 pytz-2025.2 regex-2024.11.6 requests-2.32.4 requests-html-0.10.0 requests-oauthlib-2.0.0 rsa-4.9.1 schedule-1.2.0 scikit-learn-1.7.0 scipy-1.15.3 selenium-4.33.0 sgmllib3k-1.0.0 six-1.17.0 sniffio-1.3.1 sortedcontainers-2.4.0 soupsieve-2.7 starlette-0.27.0 stripe-12.1.0 threadpoolctl-3.6.0 tqdm-4.67.1 trio-0.30.0 trio-websocket-0.12.2 tweepy-4.15.0 typing-inspection-0.4.1 typing_extensions-4.13.2 tzlocal-5.3.1 uritemplate-4.1.1 urllib3-2.4.0 uvicorn-0.24.0 w3lib-2.3.1 webdriver-manager-4.0.2 websocket-client-1.8.0 websockets-10.4 wsproto-1.2.0 zipp-3.22.0
+==> Requesting Node.js version >=18
+==> Using Node.js version 24.2.0 via ./.venv/lib/python3.13/site-packages/playwright/driver/package/package.json
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Uploading build...
+==> Uploaded in 9.5s. Compression took 2.7s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'python hirmagnet_newspaper.py'
+INFO:     Started server process [107]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:10000 (Press CTRL+C to quit)
+🧲 Enhanced Models loaded with AI Journalist support!
+👥 Available journalists: 7
+📊 20-point importance scale: ACTIVE
+🔄 Backward compatibility: MAINTAINED
+🎖️ HERR CLAUS NON-BLOCKING BACKEND - READY FOR DEPLOYMENT!
+🧲 Deutsche Präzision Features:
+   ✅ Non-blocking API endpoints with timeout protection
+   ✅ Background processing with ThreadPoolExecutor
+   ✅ Intelligent dashboard caching system
+   ✅ Processing status monitoring
+   ✅ Manual processing trigger for testing
+   ✅ Full backward compatibility maintained
+   ✅ Alap cikk API endpoints
+   ✅ DataCollector integráció
+   ✅ Admin management funkciók
+   ✅ OpenAI GPT-4o & Gemini 2.5 Flash AI integráció
+   ✅ RSS proxy & utility endpoints
+📋 Enhanced endpoints:
+   🎖️ GET /api/articles - NON-BLOCKING with processing status
+   🎖️ GET /api/trending - NON-BLOCKING with timeout protection
+   🎖️ GET /api/latest - NON-BLOCKING with timeout protection
+   🎖️ GET /api/dashboard-data - CACHED with intelligent fallback
+   🎖️ GET /api/processing-status - NEW: Server processing monitoring
+   🎖️ POST /api/admin/trigger-processing - NEW: Manual testing trigger
+🚀 HERR CLAUS ENGINEERING - DEUTSCHE PRÄZISION GUARANTEED!
+✅ Adatbázis táblák létrehozva
+✅ Database tables created/verified
+🧲 CACHE-KILLER applied to root: /
+INFO:     127.0.0.1:42204 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+==> Your service is live 🎉
+🧲 CACHE-KILLER applied to root: /
+INFO:     89.223.199.26:0 - "GET / HTTP/1.1" 200 OK
+🧲 CACHE-KILLER applied to static: /static/js/hirmagnet-main.js
+INFO:     89.223.199.26:0 - "GET /js/hirmagnet-main.js?v=202506161200 HTTP/1.1" 200 OK
+🧲 CACHE-KILLER applied to static: /static/js/utils.js
+INFO:     89.223.199.26:0 - "GET /js/utils.js?v=202506161200 HTTP/1.1" 200 OK
+🧲 CACHE-KILLER applied to static: /static/js/app.js
+INFO:     89.223.199.26:0 - "GET /js/app.js?v=202506161200 HTTP/1.1" 200 OK
+🧲 CACHE-KILLER applied to static: /static/styles.css
+INFO:     89.223.199.26:0 - "GET /styles.css?v=202506161200 HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /background1.jpg HTTP/1.1" 200 OK
+🧲 CACHE-KILLER applied to API: /api/articles
+INFO:     89.223.199.26:0 - "GET /api/articles?limit=20&offset=0 HTTP/1.1" 200 OK
+  [DEBUG] Valuta API hívás...
+  [DEBUG] Válasz státusz: 200
+  [DEBUG] API válasz: {'provider': 'https://www.exchangerate-api.com', 'WARNING_UPGRADE_TO_V6': 'https://www.exchangerate-api.com/docs/free', 'terms': 'https://www.exchangerate-api.com/terms', 'base': 'EUR', 'date': '2025-06-19', 'time_last_updated': 1750291201, 'rates': {'EUR': 1, 'AED': 4.22, 'AFN': 80.84, 'ALL': 98.03, 'AMD': 441.71, 'ANG': 2.06, 'AOA': 1082.13, 'ARS': 1322.7, 'AUD': 1.77, 'AWG': 2.06, 'AZN': 1.96, 'BAM': 1.96, 'BBD': 2.3, 'BDT': 140.32, 'BGN': 1.96, 'BHD': 0.432, 'BIF': 3418.62, 'BMD': 1.15, 'BND': 1.48, 'BOB': 7.96, 'BRL': 6.32, 'BSD': 1.15, 'BTN': 99.41, 'BWP': 15.53, 'BYN': 3.56, 'BZD': 2.3, 'CAD': 1.57, 'CDF': 3353.5, 'CHF': 0.94, 'CLP': 1086.29, 'CNY': 8.26, 'COP': 4703.25, 'CRC': 579.93, 'CUP': 27.58, 'CVE': 110.27, 'CZK': 24.81, 'DJF': 204.23, 'DKK': 7.46, 'DOP': 68.06, 'DZD': 149.65, 'EGP': 58.02, 'ERN': 17.24, 'ETB': 156.22, 'FJD': 2.59, 'FKP': 0.855, 'FOK': 7.46, 'GBP': 0.855, 'GEL': 3.13, 'GGP': 0.855, 'GHS': 11.98, 'GIP': 0.855, 'GMD': 83.67, 'GNF': 10002.97, 'GTQ': 8.83, 'GYD': 240.52, 'HKD': 9.02, 'HNL': 30.04, 'HRK': 7.53, 'HTG': 150.86, 'HUF': 403.28, 'IDR': 18745.44, 'ILS': 4.01, 'IMP': 0.855, 'INR': 99.41, 'IQD': 1504.78, 'IRR': 48845.76, 'ISK': 143.61, 'JEP': 0.855, 'JMD': 183.72, 'JOD': 0.815, 'JPY': 166.51, 'KES': 148.61, 'KGS': 100.55, 'KHR': 4633.13, 'KID': 1.77, 'KMF': 491.97, 'KRW': 1580.43, 'KWD': 0.352, 'KYD': 0.958, 'KZT': 597.63, 'LAK': 24983.32, 'LBP': 102851.16, 'LKR': 345.1, 'LRD': 229.88, 'LSL': 20.69, 'LYD': 6.23, 'MAD': 10.53, 'MDL': 19.65, 'MGA': 5122.07, 'MKD': 61.53, 'MMK': 3250.37, 'MNT': 4142.53, 'MOP': 9.29, 'MRU': 45.66, 'MUR': 52.09, 'MVR': 17.77, 'MWK': 2002.45, 'MXN': 21.84, 'MYR': 4.89, 'MZN': 73.39, 'NAD': 20.69, 'NGN': 1775.7, 'NIO': 42.24, 'NOK': 11.45, 'NPR': 159.06, 'NZD': 1.91, 'OMR': 0.442, 'PAB': 1.15, 'PEN': 4.15, 'PGK': 4.73, 'PHP': 65.6, 'PKR': 325.38, 'PLN': 4.27, 'PYG': 9224.03, 'QAR': 4.18, 'RON': 5.03, 'RSD': 117.23, 'RUB': 90.21, 'RWF': 1662.58, 'SAR': 4.31, 'SBD': 9.75, 'SCR': 16.97, 'SDG': 514.04, 'SEK': 11.06, 'SGD': 1.48, 'SHP': 0.855, 'SLE': 25.82, 'SLL': 25818.56, 'SOS': 656.94, 'SRD': 44.73, 'SSP': 5410.55, 'STN': 24.5, 'SYP': 14801.2, 'SZL': 20.69, 'THB': 37.53, 'TJS': 11.38, 'TMT': 4.03, 'TND': 3.38, 'TOP': 2.7, 'TRY': 45.45, 'TTD': 7.8, 'TVD': 1.77, 'TWD': 33.96, 'TZS': 3013.89, 'UAH': 47.9, 'UGX': 4140.46, 'USD': 1.15, 'UYU': 46.98, 'UZS': 14542.71, 'VES': 119.45, 'VND': 29952.58, 'VUV': 137.36, 'WST': 3.03, 'XAF': 655.96, 'XCD': 3.1, 'XCG': 2.06, 'XDR': 0.845, 'XOF': 655.96, 'XPF': 119.33, 'YER': 279.18, 'ZAR': 20.69, 'ZMW': 27.99, 'ZWL': 31.05}}
+  [DEBUG] EUR/HUF: 403.28, USD/HUF: 350.67826086956524, CHF/HUF: 429.02127659574467
+  [DEBUG] 1. CoinGecko crypto API...
+  [DEBUG] CoinGecko SUCCESS: BTC: $104,341, ETH: $2,511
+  [DEBUG] Aktuális USD/HUF: 351.07
+  [DEBUG] 1. CoinGecko arany API...
+  [DEBUG] CoinGecko arany SUCCESS: 3390 USD/oz → 38261 HUF/g
+  [DEBUG] Magyar részvények lekérdezése...
+  [DEBUG] MOL árfolyam ellenőrzés: 2970.0 HUF, tartomány: 2500-4000, reális: True
+  [DEBUG] MOL (MOL.BD): 2970 HUF (-0.6%)
+  [DEBUG] Richter árfolyam ellenőrzés: 10310.0 HUF, tartomány: 8000-12000, reális: True
+  [DEBUG] Richter (RICHT.BD): 10310 HUF (-1.0%)
+  [DEBUG] OTP árfolyam ellenőrzés: 26770.0 HUF, tartomány: 20000-30000, reális: True
+  [DEBUG] OTP (OTP.BD): 26770 HUF (-1.3%)
+  [DEBUG] Magyar Telekom árfolyam ellenőrzés: 1788.0 HUF, tartomány: 1500-2000, reális: True
+  [DEBUG] Magyar Telekom (MTEL.BD): 1788 HUF (-0.2%)
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+🧲 CACHE-KILLER applied to API: /api/trending
+INFO:     89.223.199.26:0 - "GET /api/trending?limit=10 HTTP/1.1" 200 OK
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to root: /
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+🧲 CACHE-KILLER applied to API: /api/processing-status
+🧲 CACHE-KILLER applied to API: /api/dashboard-data
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/processing-status HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/processing-status HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/processing-status HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/processing-status HTTP/1.1" 200 OK
+INFO:     94.44.229.252:0 - "GET / HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/processing-status HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/processing-status HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+❌ Trending error: QueuePool limit of size 5 overflow 10 reached, connection timed out, timeout 30.00 (Background on this error at: https://sqlalche.me/e/20/3o7r)
+❌ Trending error: QueuePool limit of size 5 overflow 10 reached, connection timed out, timeout 30.00 (Background on this error at: https://sqlalche.me/e/20/3o7r)
+❌ Articles API error: QueuePool limit of size 5 overflow 10 reached, connection timed out, timeout 30.00 (Background on this error at: https://sqlalche.me/e/20/3o7r)
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+❌ Articles API error: QueuePool limit of size 5 overflow 10 reached, connection timed out, timeout 30.00 (Background on this error at: https://sqlalche.me/e/20/3o7r)
+❌ Trending error: QueuePool limit of size 5 overflow 10 reached, connection timed out, timeout 30.00 (Background on this error at: https://sqlalche.me/e/20/3o7r)
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK
+==> Detected service running on port 10000
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+❌ Latest articles error: QueuePool limit of size 5 overflow 10 reached, connection timed out, timeout 30.00 (Background on this error at: https://sqlalche.me/e/20/3o7r)
+INFO:     89.223.199.26:0 - "GET /api/processing-status HTTP/1.1" 200 OK
+❌ Trending error: QueuePool limit of size 5 overflow 10 reached, connection timed out, timeout 30.00 (Background on this error at: https://sqlalche.me/e/20/3o7r)
+INFO:     89.223.199.26:0 - "GET /api/processing-status HTTP/1.1" 200 OK
+INFO:     89.223.199.26:0 - "GET /api/dashboard-data HTTP/1.1" 200 OK

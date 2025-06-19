@@ -1,25 +1,29 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 from config.settings import DATABASE_URL
 from database.models import Base
-import os
 
 # Adatbázis engine létrehozása
 if os.environ.get("RENDER"):
-    # RENDER: Connection pool NÉLKÜL - egyszerű SQLite
+    # CRITICAL FIX: NullPool for SQLite production - NO CONNECTION POOL
     engine = create_engine(
         DATABASE_URL,
+        poolclass=NullPool,  # !!!!! CRÍTICO: NullPool = zero connection pooling
         connect_args={
             "check_same_thread": False,
             "timeout": 60
         },
-        poolclass=None,  # !!!!! FONTOS: NINCS CONNECTION POOL
         echo=False
     )
-    print("🚀 Production database config loaded")
+    print("🚀 Production SQLite config: NullPool - No connection pool")
 else:
-    # Development: normál konfiguráció
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    # Development: normál konfiguráció  
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False}
+    )
     print("🔧 Development database config loaded")
 
 # Session factory
