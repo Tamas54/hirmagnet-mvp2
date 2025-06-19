@@ -11,7 +11,7 @@ import os
 import json
 
 # Database imports
-from database.db import get_db
+from database.db import get_db, create_tables
 from database.models import Article, User, SocialPost, SiteStats, ProcessingLog
 
 # ROUTES IMPORT ÉS INCLUDE
@@ -23,6 +23,13 @@ app = FastAPI(
     description="AI-powered Hungarian News Portal with Premium Features",
     version="2.0.0"
 )
+
+# Database initialization
+try:
+    create_tables()
+    print("✅ Database tables created/verified")
+except Exception as e:
+    print(f"⚠️ Database setup warning: {e}")
 
 # 🧲 HERR CLAUS CACHE-KILLER MIDDLEWARE - KRITIKUS!
 @app.middleware("http")
