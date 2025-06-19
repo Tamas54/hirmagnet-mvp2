@@ -282,4 +282,11 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Render deployment
+    if os.environ.get("RENDER"):
+        port = int(os.environ.get("PORT", 8000))
+        import uvicorn
+        from api.main import app
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    else:
+        sys.exit(main())
