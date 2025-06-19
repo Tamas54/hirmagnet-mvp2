@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HírMagnet Admin Editor - Kommandozentrale v3.0</title>
+    <style>
+        :root {
+            --admin-primary: #1a365d; --admin-secondary: #2d3748; --admin-accent: #3182ce;
+            --admin-danger: #e53e3e; --admin-success: #38a169; --admin-warning: #d69e2e;
+            --admin-bg: #f7fafc; --admin-card: #ffffff; --admin-border: #e2e8f0;
+            --admin-text: #2d3748; --admin-text-light: #718096;
+        }
+
+        // Enhanced AI Editor Class with Real API Integration
+        class EnhancedAIEditor {
+            constructor() {
+                this.pendingChanges = [];
+                this.isProcessing = false;
+                this.currentMode = 'filtered';
+                this.selectedArticle = null;
+                this.processingCancelled = false;
+                this.setupAIEventListeners();
+            }
+
+            setupAIEventListeners() {
+                // Mode buttons
+                document.querySelectorAll('.ai-mode-btn').forEach(btn => {
+                    btn.addEventListener('click', () => this.setMode(btn.dataset.mode));
+                });
+
+                // Provider check
+                document.getElementById('checkProvidersBtn').addEventListener('click', () => this.checkProviders());
+
+                // Filtered mode
+                document.getElementById('executeFilteredBtn').addEventListener('click', () => this.executeFiltered());
+
+                // Single mode
+                document.getElementById('searchSingleBtn').addEventListener('click', () => this.searchSingleArticle());
+                document.getElementById('loadSingleBtn').addEventListener('click', () => this.loadSingleArticle());
+                document.getElementById('singleExecuteBtn').addEventListener('click', () => this.executeSingle());
+
+                // Bulk mode
+                document.getElementById('previewBulkBtn').addEventListener('click', () => this.previewBulkArticles());
+                document.getElementById('bulkExecuteBtn').addEventListener('click', () => this.executeBulk());
+
+                // Results actions
+                document.getElementById('applyAllBtn').addEventListener('click', () => this.applyAllChanges());
+                document.getElementById('selectAllBtn').addEventListener('click', () => this.selectAllSuggestions());
+                document.getElementById('deselectAllBtn').addEventListener('click', () => this.deselectAllSuggestions());
+                document.getElementById('cancelChangesBtn').addEventListener('click', () => this.cancelChanges());
+
+                // Processing
+                document.getElementById('cancelProcessingBtn').addEventListener('click', () => this.cancelProcessing());
+            }
+
+            // Mode management
+            setMode(mode) {
+                this.currentMode = mode;
+                
+                // Hide all panels
+                document.querySelectorAll('.ai-mode-panel').forEach(panel => {
+                    panel.style.display = 'none';
+                });
+                
+                // Remove active class from all buttons
+                document.querySelectorAll('.ai-mode-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Show selected panel and activate button
+                document.getElementById(mode + 'Mode').style.display = 'block';
+                document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+                
+                this.updateStatus(`Mód váltás: ${this.getModeDisplayName(mode)}`);
+            }
+
+            getModeDisplayName(mode) {
+                const modes = {
+                    'filtered': 'Szűrt Cikkek',
+                    'single': 'Egy Cikk',
+                    'bulk': 'Minden Frontend Cikk'
+                };
+                return modes[mode] || mode;
+            }
+
+            // AI Provider management
+            async checkProviders() {
+                try {
+                    this.showProcessingStatus('AI szolgáltatók ellenőrzése...');
+                    
+                    const response = await fetch('/api/admin/ai/providers');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        let message = 'AI Szolgáltatók:\n\n';
+                        
+                        Object.entries(data.providers).forEach(([key, provider]) => {
+                            const status = provider.available ? '✅ Elérhető' : '❌ Nem elérhető';
+                            message += `${provider.name}: ${status}\n`;
+                            message += `Model: ${provider.model}\n`;
+                            message += `${provider.description}\n\n`;
+                        });
+                        
+                        alert(message);
+                    } else {
+                        throw new Error('Provider check failed');
+                    }
+                    
+                } catch (error) {
+                    console.error('Provider check error:', error);
+                    this.showMessage('Nem sikerült ellenőrizni az AI szolgáltatókat', 'danger');
+                } finally {
+                    this.hideProcessingStatus();
+                }
+            }
+
+            // Single Article Functions
+            async searchSingleArticle() {
+                const query = document.getElementById('singleArticleSearch').value.trim();
+                if (!query) {
+                    this.showMessage('Add meg a keresési kifejezést!', 'warning');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/articles?search=${encodeURIComponent(query)}&limit=5`);
+                    const data = await response.json();
+                    
+                    if (data.articles && data.articles.length > 0) {
+                        this.showArticleSearchResults(data.articles);
+                    } else {
+                        this.showMessage('Nem található cikk ezzel a keresési kifejezéssel', 'info');
+                    }
+                    
+                } catch (error) {
+                    console.error('Article search error:', error);
+                    this.showMessage('Keresési hiba', 'danger');
+                }
+            }
+
+            showArticleSearchResults(articles) {
+                let message = 'Találatok:\n\n';
+                articles.forEach(article => {
+                    message += `ID: ${article.id}\n`;
+                    message += `Cím: ${article.title}\n`;
+                    message += `Kategória: ${article.category}\n`;
+                    message += `Forrás: ${article.source}\n\n`;
+                });
+                
+                const selectedId = prompt(message + 'Add meg a kiválasztott cikk ID-ját:');
+                if (selectedId) {
+                    document.getElementById('singleArticleSearch').value = selectedId;
+                    this.loadSingleArticle();
+                }
+            }
+
+            async loadSingleArticle() {
+                const input = document.getElementById('singleArticleSearch').value.trim();
+                if (!input) {
+                    this.showMessage('Add meg a cikk ID-ját!', 'warning');
+                    return;
+                }
+
+                const articleId = parseInt(input);
+                if (isNaN(articleId)) {
+                    this.showMessage('Érvényes cikk ID-t adj meg!', 'danger');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/articles/${articleId}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Cikk nem található: ${response.status}`);
+                    }
+                    
+                    const article = await response.json();
+                    this.selectedArticle = article;
+                    this.displaySelectedArticle(article);
+                    
+                } catch (error) {
+                    console.error('Load single article error:', error);
+                    this.showMessage(`Cikk betöltési hiba: ${error.message}`, 'danger');
+                }
+            }
+
+            displaySelectedArticle(article) {
+                document.getElementById('singleArticleId').textContent = `#${article.id}`;
+                document.getElementById('singleArticleTitle').textContent = article.title;
+                document.getElementById('singleArticleMeta').textContent = 
+                    `${article.category} | ${article.source} | ${article.view_count} megtekintés`;
+                
+                document.getElementById('singleArticleDisplay').style.display = 'block';
+                document.getElementById('singleExecuteBtn').disabled = false;
+                
+                this.showMessage(`Cikk betöltve: ${article.title}`, 'success');
+            }
+
+            // Bulk preview
+            async previewBulkArticles() {
+                const maxArticles = parseInt(document.getElementById('bulkMaxArticles').value);
+                
+                try {
+                    const response = await fetch(`/api/articles?limit=${maxArticles}`);
+                    const data = await response.json();
+                    
+                    if (data.articles && data.articles.length > 0) {
+                        this.displayBulkPreview(data.articles);
+                    } else {
+                        this.showMessage('Nincsenek elérhető cikkek', 'warning');
+                    }
+                    
+                } catch (error) {
+                    console.error('Bulk preview error:', error);
+                    this.showMessage('Előnézet betöltési hiba', 'danger');
+                }
+            }
+
+            displayBulkPreview(articles) {
+                const container = document.getElementById('bulkPreviewContent');
+                let html = '';
+                
+                articles.forEach((article, index) => {
+                    html += `
+                        <div class="bulk-article-item">
+                            <strong>#${article.id}</strong> - ${this.escapeHtml(article.title)} 
+                            <span style="color: var(--admin-text-light);">(${article.category})</span>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                document.getElementById('bulkPreview').style.display = 'block';
+                
+                this.showMessage(`${articles.length} cikk lesz érintett`, 'info');
+            }
+
+            // Execute AI Commands
+            async executeFiltered() {
+                const command = document.getElementById('filteredCommand').value.trim();
+                const category = document.getElementById('filteredCategory').value;
+                const maxArticles = parseInt(document.getElementById('filteredMaxArticles').value);
+
+                if (!command) {
+                    this.showMessage('Add meg az AI parancsot!', 'warning');
+                    return;
+                }
+
+                await this.executeAICommand('/api/admin/ai/command', {
+                    command,
+                    target_category: category || null,
+                    max_articles: maxArticles,
+                    ai_provider: document.getElementById('aiProviderSelect').value,
+                    style: document.getElementById('aiStyle').value,
+                    audience: document.getElementById('aiAudience').value,
+                    brand_voice: document.getElementById('aiBrandVoice').value
+                });
+            }
+
+            async executeSingle() {
+                if (!this.selectedArticle) {
+                    this.showMessage('Előbb válassz ki egy cikket!', 'warning');
+                    return;
+                }
+
+                const command = document.getElementById('singleCommand').value.trim();
+                if (!command) {
+                    this.showMessage('Add meg az AI parancsot!', 'warning');
+                    return;
+                }
+
+                const response = await this.executeAICommand('/api/admin/ai/single', {
+                    article_id: this.selectedArticle.id,
+                    command,
+                    ai_provider: document.getElementById('aiProviderSelect').value,
+                    style: document.getElementById('aiStyle').value,
+                    audience: document.getElementById('aiAudience').value,
+                    brand_voice: document.getElementById('aiBrandVoice').value
+                });
+
+                // For single article, we get different response format
+                if (response && response.suggestion) {
+                    this.displayAIResults([response.suggestion]);
+                }
+            }
+
+            async executeBulk() {
+                const confirmed = document.getElementById('bulkConfirmCheckbox').checked;
+                if (!confirmed) {
+                    this.showMessage('Jelöld be a megerősítő négyzetet!', 'warning');
+                    return;
+                }
+
+                const command = document.getElementById('bulkCommand').value.trim();
+                if (!command) {
+                    this.showMessage('Add meg az AI parancsot!', 'warning');
+                    return;
+                }
+
+                const maxArticles = parseInt(document.getElementById('bulkMaxArticles').value);
+                
+                if (!confirm(`🚀 FIGYELEM!\n\nEz a művelet ${maxArticles} cikket fog módosítani!\n\nBiztosan folytatod?`)) {
+                    return;
+                }
+
+                await this.executeAICommand('/api/admin/ai/bulk-all', {
+                    command,
+                    max_articles: maxArticles,
+                    ai_provider: document.getElementById('aiProviderSelect').value,
+                    style: document.getElementById('aiStyle').value,
+                    audience: document.getElementById('aiAudience').value,
+                    brand_voice: document.getElementById('aiBrandVoice').value
+                });
+            }
+
+            // Core AI Command Execution
+            async executeAICommand(endpoint, requestData) {
+                this.processingCancelled = false;
+                
+                try {
+                    this.showProcessingStatus('AI parancs végrehajtása...');
+                    this.updateProcessingMessage('Kérés küldése...');
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    if (this.processingCancelled) {
+                        return null;
+                    }
+
+                    this.updateProcessingMessage('AI válasz feldolgozása...');
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || `HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        throw new Error(data.message || 'AI processing failed');
+                    }
+
+                    this.updateProcessingMessage('Eredmények megjelenítése...');
+
+                    // Handle different response formats
+                    let suggestions = [];
+                    if (data.suggestions) {
+                        suggestions = data.suggestions;
+                    } else if (data.suggestion) {
+                        suggestions = [data.suggestion];
+                    }
+
+                    if (suggestions.length === 0) {
+                        this.showMessage('Az AI nem generált módosítási javaslatokat', 'info');
+                        return data;
+                    }
+
+                    this.displayAIResults(suggestions);
+                    
+                    this.showMessage(
+                        `✅ AI feldolgozás kész: ${suggestions.length} javaslat (${data.ai_provider})`, 
+                        'success'
+                    );
+
+                    return data;
+
+                } catch (error) {
+                    console.error('AI command execution error:', error);
+                    this.showMessage(`AI hiba: ${error.message}`, 'danger');
+                    return null;
+                } finally {
+                    this.hideProcessingStatus();
+                }
+            }
+
+            // Results Display
+            displayAIResults(suggestions) {
+                this.pendingChanges = suggestions;
+                
+                const resultsDiv = document.getElementById('aiResults');
+                const contentDiv = document.getElementById('aiResultsContent');
+                
+                let html = '';
+                
+                suggestions.forEach((suggestion, index) => {
+                    const confidenceClass = suggestion.confidence || 'medium';
+                    const typeDisplayName = this.getTypeDisplayName(suggestion.type);
+                    
+                    html += `
+                        <div class="ai-result-item" data-suggestion-id="${index}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <div>
+                                    <strong>Cikk #${suggestion.article_id} - ${typeDisplayName}</strong>
+                                    <span class="ai-confidence ${confidenceClass}">${confidenceClass}</span>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-success btn-sm accept-btn" data-index="${index}" title="Elfogadás">✅</button>
+                                    <button class="btn btn-danger btn-sm reject-btn" data-index="${index}" title="Elvetés">❌</button>
+                                </div>
+                            </div>
+                            
+                            <div class="ai-change-preview">
+                                <div class="ai-before">${this.escapeHtml(suggestion.original || 'Üres')}</div>
+                                <div class="ai-after">${this.escapeHtml(suggestion.suggested)}</div>
+                            </div>
+                            
+                            <div style="font-size: 0.9rem; color: var(--admin-text-light); font-style: italic; margin-top: 0.75rem; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
+                                💡 <strong>Indoklás:</strong> ${this.escapeHtml(suggestion.reason)}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                contentDiv.innerHTML = html;
+                
+                // Add event listeners to accept/reject buttons
+                document.querySelectorAll('.accept-btn').forEach(btn => {
+                    btn.addEventListener('click', () => this.acceptSuggestion(parseInt(btn.dataset.index)));
+                });
+                
+                document.querySelectorAll('.reject-btn').forEach(btn => {
+                    btn.addEventListener('click', () => this.rejectSuggestion(parseInt(btn.dataset.index)));
+                });
+                
+                this.updateSuggestionCounts();
+                resultsDiv.style.display = 'block';
+                
+                // Scroll to results
+                resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            getTypeDisplayName(type) {
+                const types = {
+                    'title': 'CÍM',
+                    'summary': 'ÖSSZEFOGLALÓ',
+                    'seo': 'SEO KULCSSZAVAK',
+                    'sentiment': 'HANGULAT',
+                    'content': 'TARTALOM'
+                };
+                return types[type] || type.toUpperCase();
+            }
+
+            // Suggestion Management
+            acceptSuggestion(index) {
+                const item = document.querySelector(`[data-suggestion-id="${index}"]`);
+                if (item) {
+                    item.classList.add('accepted');
+                    item.classList.remove('rejected');
+                    this.updateSuggestionCounts();
+                }
+            }
+
+            rejectSuggestion(index) {
+                const item = document.querySelector(`[data-suggestion-id="${index}"]`);
+                if (item) {
+                    item.classList.add('rejected');
+                    item.classList.remove('accepted');
+                    this.updateSuggestionCounts();
+                }
+            }
+
+            selectAllSuggestions() {
+                document.querySelectorAll('.ai-result-item').forEach(item => {
+                    item.classList.add('accepted');
+                    item.classList.remove('rejected');
+                });
+                this.updateSuggestionCounts();
+            }
+
+            deselectAllSuggestions() {
+                document.querySelectorAll('.ai-result-item').forEach(item => {
+                    item.classList.remove('accepted');
+                    item.classList.add('rejected');
+                });
+                this.updateSuggestionCounts();
+            }
+
+            updateSuggestionCounts() {
+                const total = document.querySelectorAll('.ai-result-item').length;
+                const accepted = document.querySelectorAll('.ai-result-item.accepted').length;
+                
+                document.getElementById('totalCount').textContent = total;
+                document.getElementById('acceptedCount').textContent = accepted;
+            }
+
+            // Apply Changes
+            async applyAllChanges() {
+                const acceptedItems = document.querySelectorAll('.ai-result-item.accepted');
+                
+                if (acceptedItems.length === 0) {
+                    this.showMessage('Nincsenek elfogadott módosítások!', 'warning');
+                    return;
+                }
+
+                if (!confirm(`🤖 Biztosan alkalmazod a ${acceptedItems.length} elfogadott módosítást?`)) {
+                    return;
+                }
+
+                const acceptedSuggestions = [];
+                acceptedItems.forEach(item => {
+                    const index = parseInt(item.dataset.suggestionId);
+                    if (this.pendingChanges[index]) {
+                        acceptedSuggestions.push(this.pendingChanges[index]);
+                    }
+                });
+
+                try {
+                    this.showProcessingStatus('Módosítások alkalmazása...');
+                    
+                    const response = await fetch('/api/admin/ai/apply-suggestions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(acceptedSuggestions)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || `HTTP ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    this.showMessage(
+                        `✅ ${result.applied_count} módosítás alkalmazva! ${result.error_count > 0 ? `(${result.error_count} hiba)` : ''}`,
+                        result.error_count > 0 ? 'warning' : 'success'
+                    );
+                    
+                    if (result.errors && result.errors.length > 0) {
+                        console.error('Application errors:', result.errors);
+                    }
+                    
+                    this.cancelChanges();
+                    
+                } catch (error) {
+                    console.error('Apply changes error:', error);
+                    this.showMessage(`Alkalmazási hiba: ${error.message}`, 'danger');
+                } finally {
+                    this.hideProcessingStatus();
+                }
+            }
+
+            cancelChanges() {
+                document.getElementById('aiResults').style.display = 'none';
+                this.pendingChanges = [];
+                this.updateStatus('Módosítások elvetve');
+            }
+
+            cancelProcessing() {
+                this.processingCancelled = true;
+                this.hideProcessingStatus();
+                this.showMessage('AI feldolgozás megszakítva', 'info');
+            }
+
+            // UI Helper Methods
+            showProcessingStatus(message) {
+                this.isProcessing = true;
+                const status = document.getElementById('aiProcessingStatus');
+                const messageEl = document.getElementById('aiProcessingMessage');
+                const statsEl = document.getElementById('aiProcessingStats');
+                
+                messageEl.textContent = message;
+                statsEl.textContent = 'Parancs elemzése...';
+                status.style.display = 'block';
+                
+                // Add overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'overlay';
+                overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;';
+                document.body.appendChild(overlay);
+            }
+
+            hideProcessingStatus() {
+                this.isProcessing = false;
+                document.getElementById('aiProcessingStatus').style.display = 'none';
+                
+                // Remove overlay
+                const overlay = document.querySelector('.overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+            }
+
+            updateProcessingMessage(message) {
+                document.getElementById('aiProcessingMessage').textContent = message;
+            }
+
+            updateProcessingStats(stats) {
+                document.getElementById('aiProcessingStats').textContent = stats;
+            }
+
+            updateStatus(message) {
+                if (window.admin) {
+                    admin.updateCurrentOperation(message);
+                }
+            }
+
+            showMessage(message, type = 'info') {
+                if (window.admin) {
+                    admin.showMessage(message, type);
+                } else {
+                    console.log(`AI Editor: ${message} (${type})`);
+                }
+            }
+
+            escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--admin-bg); color: var(--admin-text); line-height: 1.6; }
+        .admin-header { background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary)); color: white; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-bottom: 3px solid var(--admin-accent); }
+        .admin-header h1 { font-size: 1.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem; }
+        .admin-header .subtitle { font-size: 0.9rem; opacity: 0.8; margin-top: 0.25rem; }
+        .admin-container { max-width: 1400px; margin: 0 auto; padding: 2rem; display: grid; grid-template-columns: 350px 1fr; gap: 2rem; min-height: calc(100vh - 120px); }
+        .admin-sidebar { background: var(--admin-card); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid var(--admin-border); height: fit-content; position: sticky; top: 2rem; }
+        .admin-nav { list-style: none; }
+        .admin-nav li { margin-bottom: 0.5rem; }
+        .admin-nav button { width: 100%; background: transparent; border: 1px solid var(--admin-border); padding: 0.75rem 1rem; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s ease; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
+        .admin-nav button:hover { background: var(--admin-accent); color: white; transform: translateX(3px); }
+        .admin-nav button.active { background: var(--admin-accent); color: white; border-color: var(--admin-accent); }
+        .admin-main { background: var(--admin-card); border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid var(--admin-border); }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--admin-primary); padding-bottom: 0.5rem; border-bottom: 2px solid var(--admin-accent); }
+        .search-panel { background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid var(--admin-border); }
+        .search-form { display: flex; gap: 1rem; align-items: end; }
+        .form-group { flex: 1; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--admin-text); }
+        .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--admin-border); border-radius: 6px; font-size: 0.95rem; transition: all 0.2s ease; }
+        .form-control:focus { outline: none; border-color: var(--admin-accent); box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1); }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: var(--admin-accent); color: white; }
+        .btn-primary:hover { background: #2c5aa0; transform: translateY(-1px); }
+        .btn-success { background: var(--admin-success); color: white; }
+        .btn-success:hover { background: #2f855a; }
+        .btn-danger { background: var(--admin-danger); color: white; }
+        .btn-danger:hover { background: #c53030; }
+        .btn-secondary { background: #e2e8f0; color: var(--admin-text); }
+        .btn-secondary:hover { background: #cbd5e0; }
+        .btn-warning { background: var(--admin-warning); color: white; }
+        .btn-warning:hover { background: #b98929; }
+        .results-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .results-table th { background: var(--admin-primary); color: white; padding: 1rem; text-align: left; font-weight: 600; }
+        .results-table td { padding: 1rem; border-bottom: 1px solid var(--admin-border); vertical-align: middle; }
+        .results-table tr:last-child td { border-bottom: none; }
+        .results-table tr:hover { background: #f8f9fa; }
+        .article-title-cell { font-weight: 500; color: var(--admin-primary); max-width: 300px; }
+        .article-meta { font-size: 0.85rem; color: var(--admin-text-light); margin-top: 0.25rem; }
+        .action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .editor-form { background: #f8f9fa; padding: 2rem; border-radius: 8px; border: 1px solid var(--admin-border); margin-top: 1rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        .form-row.full { grid-template-columns: 1fr; }
+        .textarea-large { min-height: 200px; resize: vertical; }
+        .textarea-xl { min-height: 300px; resize: vertical; }
+        .alert { padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border: 1px solid; }
+        .alert-success { background: #f0fff4; color: var(--admin-success); border-color: var(--admin-success); }
+        .alert-danger { background: #fed7d7; color: var(--admin-danger); border-color: var(--admin-danger); }
+        .alert-info { background: #ebf8ff; color: var(--admin-accent); border-color: var(--admin-accent); }
+        .loading { opacity: 0.6; pointer-events: none; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid transparent; border-top: 2px solid currentColor; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .auth-panel { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .auth-form { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 400px; width: 90%; }
+        .auth-form h2 { text-align: center; margin-bottom: 1.5rem; color: var(--admin-primary); }
+        .precision-border { border-left: 4px solid var(--admin-accent); padding-left: 1rem; }
+        .kommando-badge { background: linear-gradient(45deg, #2d3748, #1a365d); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.5px; }
+        .modal { position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 2rem; border: 1px solid var(--admin-border); width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--admin-border); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .modal-title { font-size: 1.5rem; color: var(--admin-primary); }
+        .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover { color: black; }
+        .suggestion-table { width: 100%; margin-top: 1rem; border-collapse: collapse; }
+        .suggestion-table th, .suggestion-table td { border: 1px solid var(--admin-border); padding: 0.75rem; text-align: left; }
+        .suggestion-table th { background-color: #f2f2f2; }
+        .suggestion-original { background-color: #feebec; }
+        .suggestion-new { background-color: #e6ffed; }
+        
+        /* AI Editor Enhanced Styles */
+        .ai-mode-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--admin-text);
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .ai-mode-btn:hover {
+            background: rgba(58, 123, 206, 0.1);
+            color: var(--admin-accent);
+        }
+        .ai-mode-btn.active {
+            background: var(--admin-accent);
+            color: white;
+            font-weight: 600;
+        }
+        .ai-mode-panel {
+            background: white;
+            border: 1px solid var(--admin-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .ai-result-item {
+            background: white;
+            border: 1px solid var(--admin-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .ai-result-item:hover {
+            border-color: var(--admin-accent);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .ai-result-item.accepted {
+            border-color: var(--admin-success);
+            background: rgba(56, 161, 105, 0.05);
+        }
+        .ai-result-item.accepted::before {
+            content: '✅';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.2rem;
+        }
+        .ai-result-item.rejected {
+            border-color: var(--admin-danger);
+            background: rgba(229, 62, 62, 0.05);
+            opacity: 0.6;
+        }
+        .ai-result-item.rejected::before {
+            content: '❌';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.2rem;
+        }
+        .ai-change-preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .ai-before, .ai-after {
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            border: 2px solid;
+        }
+        .ai-before {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+        .ai-after {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #166534;
+        }
+        .ai-before::before {
+            content: "❌ Eredeti:";
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ai-after::before {
+            content: "✅ AI Javaslat:";
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ai-confidence {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ai-confidence.high {
+            background: rgba(56, 161, 105, 0.2);
+            color: var(--admin-success);
+            border: 1px solid var(--admin-success);
+        }
+        .ai-confidence.medium {
+            background: rgba(214, 158, 46, 0.2);
+            color: var(--admin-warning);
+            border: 1px solid var(--admin-warning);
+        }
+        .ai-confidence.low {
+            background: rgba(229, 62, 62, 0.2);
+            color: var(--admin-danger);
+            border: 1px solid var(--admin-danger);
+        }
+        .bulk-article-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--admin-border);
+            font-size: 0.85rem;
+        }
+        .bulk-article-item:last-child {
+            border-bottom: none;
+        }
+        
+        @media (max-width: 768px) {
+            .ai-change-preview {
+                grid-template-columns: 1fr;
+            }
+            .ai-mode-btn {
+                font-size: 0.8rem;
+                padding: 0.6rem 0.8rem;
+            }
+        }
+        @media (max-width: 1024px) {
+            .admin-container { grid-template-columns: 1fr; gap: 1rem; padding: 1rem; }
+            .admin-sidebar { position: static; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Panel -->
+    <div id="authPanel" class="auth-panel">
+        <div class="auth-form">
+            <h2>🎖️ ADMIN ZUGANG</h2>
+            <p style="text-align: center; margin-bottom: 1.5rem; color: var(--admin-text-light);">Admin authentikáció szükséges<br><span class="kommando-badge">KOMMANDOZENTRALE</span></p>
+            <div class="form-group">
+                <label>Admin Jelszó:</label>
+                <input type="password" id="adminPassword" class="form-control" placeholder="Geben Sie das Passwort ein...">
+            </div>
+            <button id="loginBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">🔐 Bejelentkezés</button>
+            <div id="authError" style="display: none; color: var(--admin-danger); text-align: center; margin-top: 1rem;">❌ Hibás jelszó! Zugang verweigert!</div>
+        </div>
+    </div>
+
+    <!-- Main Admin Interface -->
+    <div id="adminInterface" style="display: none;">
+        <header class="admin-header">
+            <h1>🧲 HírMagnet Admin Editor <span class="kommando-badge">KOMMANDOZENTRALE v3.0</span></h1>
+            <div class="subtitle">Deutsche Präzision für Magyar Hírek - Gemini von Program Engineering</div>
+        </header>
+
+        <div class="admin-container">
+            <aside class="admin-sidebar">
+                <h3 style="margin-bottom: 1rem; color: var(--admin-primary);">⚡ Kommando Panel</h3>
+                <ul class="admin-nav">
+                    <li><button data-section="search" class="nav-btn active">🔍 Cikkek Keresése</button></li>
+                    <li><button data-section="create" class="nav-btn">➕ Új Cikk Létrehozása</button></li>
+                    <li><button data-section="aiEditor" class="nav-btn">🤖 AI Szerkesztő</button></li>
+                    <li><button data-section="stats" class="nav-btn">📊 Statisztikák</button></li>
+                    <li><button id="logoutBtn" class="nav-btn" style="margin-top: 2rem; border-color: var(--admin-danger); color: var(--admin-danger);">🚪 Kijelentkezés</button></li>
+                </ul>
+                <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; font-size: 0.85rem;">
+                    <div class="precision-border"><strong>🎯 Aktuális Műveletek:</strong><br><span id="currentOperation">Várakozás...</span></div>
+                </div>
+            </aside>
+
+            <main class="admin-main">
+                <!-- Search Section -->
+                <section id="searchSection" class="admin-section active">
+                    <h2 class="section-title">🔍 Cikkek Keresése és Szerkesztése</h2>
+                    <div class="search-panel">
+                        <div class="search-form">
+                            <div class="form-group">
+                                <label>Keresési kifejezés:</label>
+                                <input type="text" id="searchQuery" class="form-control" placeholder="Cím, tartalom, ID vagy forrás...">
+                            </div>
+                            <div class="form-group">
+                                <label>Kategória:</label>
+                                <select id="searchCategory" class="form-control">
+                                    <option value="">Minden kategória</option>
+                                    <option value="general">Közélet</option>
+                                    <option value="politics">Politika</option>
+                                    <option value="economy">Gazdaság</option>
+                                    <option value="tech">Tech</option>
+                                    <option value="foreign">Külföld</option>
+                                    <option value="sport">Sport</option>
+                                    <option value="entertainment">Bulvár</option>
+                                    <option value="cars">Autók</option>
+                                    <option value="lifestyle">Életmód</option>
+                                </select>
+                            </div>
+                            <button id="searchBtn" class="btn btn-primary">🔍 Keresés</button>
+                        </div>
+                    </div>
+                    
+                    <div id="searchResults" class="results-container" style="display: none;">
+                        <h3>Találatok (<span id="resultsCount">0</span>):</h3>
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cím</th>
+                                    <th>Státusz</th>
+                                    <th>Forrás</th>
+                                    <th>Létrehozva</th>
+                                    <th>Műveletek</th>
+                                </tr>
+                            </thead>
+                            <tbody id="searchResultsBody"></tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Article Editor -->
+                    <div id="articleEditor" style="display: none;">
+                        <h3 style="margin-bottom: 1rem;">✏️ Cikk Szerkesztése</h3>
+                        <form id="editForm" class="editor-form">
+                            <input type="hidden" id="editArticleId">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Cím:</label>
+                                    <input type="text" id="editTitle" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Kategória:</label>
+                                    <select id="editCategory" class="form-control" required>
+                                        <option value="general">Közélet</option>
+                                        <option value="politics">Politika</option>
+                                        <option value="economy">Gazdaság</option>
+                                        <option value="tech">Tech</option>
+                                        <option value="foreign">Külföld</option>
+                                        <option value="sport">Sport</option>
+                                        <option value="entertainment">Bulvár</option>
+                                        <option value="cars">Autók</option>
+                                        <option value="lifestyle">Életmód</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Forrás:</label>
+                                    <input type="text" id="editSource" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>URL:</label>
+                                    <input type="url" id="editUrl" class="form-control" placeholder="https://...">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row full">
+                                <div class="form-group">
+                                    <label>Összefoglaló:</label>
+                                    <textarea id="editSummary" class="form-control textarea-large" placeholder="Cikk rövid összefoglalója..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row full">
+                                <div class="form-group">
+                                    <label>Teljes tartalom:</label>
+                                    <textarea id="editContent" class="form-control textarea-xl" placeholder="Cikk teljes szövege..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>SEO kulcsszavak:</label>
+                                    <input type="text" id="editKeywords" class="form-control" placeholder="kulcsszó1, kulcsszó2, kulcsszó3">
+                                </div>
+                                <div class="form-group">
+                                    <label>Hangulat:</label>
+                                    <select id="editSentiment" class="form-control">
+                                        <option value="positive">Pozitív</option>
+                                        <option value="neutral">Semleges</option>
+                                        <option value="negative">Negatív</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 2rem;">
+                                <button type="submit" class="btn btn-success">💾 Mentés</button>
+                                <button type="button" id="cancelEditBtn" class="btn btn-secondary">❌ Mégse</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Create Section -->
+                <section id="createSection" class="admin-section">
+                    <h2 class="section-title">➕ Új Cikk Létrehozása</h2>
+                    <form id="createForm" class="editor-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cím:</label>
+                                <input type="text" id="createTitle" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Kategória:</label>
+                                <select id="createCategory" class="form-control" required>
+                                    <option value="general">Közélet</option>
+                                    <option value="politics">Politika</option>
+                                    <option value="economy">Gazdaság</option>
+                                    <option value="tech">Tech</option>
+                                    <option value="foreign">Külföld</option>
+                                    <option value="sport">Sport</option>
+                                    <option value="entertainment">Bulvár</option>
+                                    <option value="cars">Autók</option>
+                                    <option value="lifestyle">Életmód</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Forrás:</label>
+                                <input type="text" id="createSource" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>URL:</label>
+                                <input type="url" id="createUrl" class="form-control" placeholder="https://" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row full">
+                            <div class="form-group">
+                                <label>Összefoglaló:</label>
+                                <textarea id="createSummary" class="form-control textarea-large" placeholder="Cikk rövid összefoglalója..." required></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row full">
+                            <div class="form-group">
+                                <label>Teljes tartalom:</label>
+                                <textarea id="createContent" class="form-control textarea-xl" placeholder="Cikk teljes szövege..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>SEO kulcsszavak:</label>
+                                <input type="text" id="createKeywords" class="form-control" placeholder="kulcsszó1, kulcsszó2, kulcsszó3">
+                            </div>
+                            <div class="form-group">
+                                <label>Hangulat:</label>
+                                <select id="createSentiment" class="form-control">
+                                    <option value="neutral">Semleges</option>
+                                    <option value="positive">Pozitív</option>
+                                    <option value="negative">Negatív</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 2rem;">
+                            <button type="submit" class="btn btn-success">➕ Cikk Létrehozása</button>
+                            <button type="reset" class="btn btn-secondary">🔄 Törlés</button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- AI Editor Section -->
+                <section id="aiEditorSection" class="admin-section">
+                    <h2 class="section-title">🤖 AI Szerkesztő - Éles API Integráció</h2>
+                    
+                    <!-- AI Provider Selection -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                                🧠 AI Kommando Zentrale
+                                <span class="kommando-badge" style="background: rgba(255,255,255,0.2);">LIVE</span>
+                            </h3>
+                            
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <label style="font-size: 0.9rem; opacity: 0.9;">AI Provider:</label>
+                                <select id="aiProviderSelect" style="background: rgba(255,255,255,0.9); color: #333; padding: 0.5rem; border-radius: 6px; border: none;">
+                                    <option value="openai">🤖 OpenAI GPT-4o</option>
+                                    <option value="gemini">🧠 Google Gemini</option>
+                                </select>
+                                <button id="checkProvidersBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer;">
+                                    ✓ Ellenőrzés
+                                </button>
+                            </div>
+                        </div>
+                        <p style="opacity: 0.9; font-size: 0.9rem;">
+                            Éles AI integráció OpenAI és Gemini API-val. Természetes nyelven adj parancsokat!
+                        </p>
+                    </div>
+
+                    <!-- Operation Mode Tabs -->
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; background: #f8f9fa; padding: 0.5rem; border-radius: 12px;">
+                        <button data-mode="filtered" class="ai-mode-btn active">
+                            🎯 Szűrt Cikkek
+                        </button>
+                        <button data-mode="single" class="ai-mode-btn">
+                            📝 Egy Cikk
+                        </button>
+                        <button data-mode="bulk" class="ai-mode-btn">
+                            🚀 Minden Frontend Cikk
+                        </button>
+                    </div>
+
+                    <!-- Filtered Articles Mode -->
+                    <div id="filteredMode" class="ai-mode-panel">
+                        <h4>🎯 Szűrt Cikkek Módosítása</h4>
+                        
+                        <div class="editor-form" style="margin-bottom: 2rem;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Kategória szűrő:</label>
+                                    <select id="filteredCategory" class="form-control">
+                                        <option value="">Minden kategória</option>
+                                        <option value="general">Közélet</option>
+                                        <option value="politics">Politika</option>
+                                        <option value="economy">Gazdaság</option>
+                                        <option value="tech">Tech</option>
+                                        <option value="foreign">Külföld</option>
+                                        <option value="sport">Sport</option>
+                                        <option value="entertainment">Bulvár</option>
+                                        <option value="cars">Autók</option>
+                                        <option value="lifestyle">Életmód</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Maximum cikkek:</label>
+                                    <select id="filteredMaxArticles" class="form-control">
+                                        <option value="5">5 cikk</option>
+                                        <option value="10">10 cikk</option>
+                                        <option value="25">25 cikk</option>
+                                        <option value="50">50 cikk</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row full">
+                                <div class="form-group">
+                                    <label>AI Parancs:</label>
+                                    <textarea 
+                                        id="filteredCommand" 
+                                        class="form-control" 
+                                        style="min-height: 100px;"
+                                        placeholder="Pl: Javítsd ki az összes cikk címét, hogy vonzóbbak legyenek"
+                                    ></textarea>
+                                </div>
+                            </div>
+                            
+                            <button id="executeFilteredBtn" class="btn btn-success">
+                                🎯 Szűrt Módosítás Végrehajtása
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Single Article Mode -->
+                    <div id="singleMode" class="ai-mode-panel" style="display: none;">
+                        <h4>📝 Egy Cikk Módosítása</h4>
+                        
+                        <div class="editor-form" style="margin-bottom: 2rem;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Cikk ID vagy Keresés:</label>
+                                    <input type="text" id="singleArticleSearch" class="form-control" placeholder="Cikk ID vagy cím alapján keresés...">
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; align-items: end;">
+                                    <button id="searchSingleBtn" class="btn btn-secondary">
+                                        🔍 Keresés
+                                    </button>
+                                    <button id="loadSingleBtn" class="btn btn-primary">
+                                        📄 Betöltés ID alapján
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Single Article Display -->
+                            <div id="singleArticleDisplay" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid var(--admin-accent);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <strong>Kiválasztott Cikk:</strong>
+                                    <span id="singleArticleId" class="kommando-badge">#ID</span>
+                                </div>
+                                <div id="singleArticleTitle" style="font-weight: 600; margin-bottom: 0.5rem;"></div>
+                                <div id="singleArticleMeta" style="font-size: 0.85rem; color: var(--admin-text-light);"></div>
+                            </div>
+                            
+                            <div class="form-row full">
+                                <div class="form-group">
+                                    <label>Mit szeretnél módosítani ezen a cikken?</label>
+                                    <textarea 
+                                        id="singleCommand" 
+                                        class="form-control" 
+                                        style="min-height: 100px;"
+                                        placeholder="Pl: Írd át a címet, hogy vonzóbb legyen és tartalmazza a 'gazdaság' szót"
+                                    ></textarea>
+                                </div>
+                            </div>
+                            
+                            <button id="singleExecuteBtn" class="btn btn-success" disabled>
+                                📝 Egy Cikk Módosítása
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bulk All Mode -->
+                    <div id="bulkMode" class="ai-mode-panel" style="display: none;">
+                        <h4>🚀 MINDEN Frontend Cikk Módosítása</h4>
+                        
+                        <div style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <span style="font-size: 1.5rem;">⚠️</span>
+                                <strong style="color: var(--admin-danger);">FIGYELEM - BULK MŰVELET</strong>
+                            </div>
+                            <p style="font-size: 0.9rem; color: var(--admin-text); margin: 0;">
+                                Ez a művelet <strong>MINDEN</strong> frontenden megjelenő cikket módosítani fog! 
+                                A művelet költséges és visszafordíthatatlan lehet.
+                            </p>
+                        </div>
+                        
+                        <div class="editor-form" style="margin-bottom: 2rem;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Maximum cikkek száma:</label>
+                                    <select id="bulkMaxArticles" class="form-control">
+                                        <option value="25">25 cikk (teszt)</option>
+                                        <option value="50">50 cikk</option>
+                                        <option value="100">100 cikk</option>
+                                        <option value="200">200 cikk (DRÁGA!)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="display: flex; align-items: end;">
+                                    <button id="previewBulkBtn" class="btn btn-secondary">
+                                        👁️ Előnézet
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="bulkPreview" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid var(--admin-warning);">
+                                <strong>Érintett cikkek előnézete:</strong>
+                                <div id="bulkPreviewContent" style="max-height: 150px; overflow-y: auto; margin-top: 0.5rem;"></div>
+                            </div>
+                            
+                            <div class="form-row full">
+                                <div class="form-group">
+                                    <label>BULK AI Parancs (minden cikkre):</label>
+                                    <textarea 
+                                        id="bulkCommand" 
+                                        class="form-control" 
+                                        style="min-height: 120px;"
+                                        placeholder="PÉLDÁK:
+• Minden cikk címét tedd vonzóbbá és informatívabbá
+• Minden politikai cikket tegyél semlegesebb hangvételűvé  
+• Rövidítsd le MINDEN összefoglalót maximum 180 karakterre
+• Add hozzá releváns SEO kulcsszavakat minden cikkhez"
+                                    ></textarea>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <button id="bulkExecuteBtn" class="btn btn-danger">
+                                    🚀 BULK MÓDOSÍTÁS - MINDEN CIKK
+                                </button>
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="bulkConfirmCheckbox">
+                                    <span style="font-size: 0.85rem;">Megértem, hogy ez minden cikket érint</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Settings Panel -->
+                    <details style="margin-bottom: 2rem;">
+                        <summary style="cursor: pointer; font-weight: 600; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                            ⚙️ AI Beállítások és Irányelvek
+                        </summary>
+                        <div style="padding: 1rem; margin-top: 0.5rem; border: 1px solid var(--admin-border); border-radius: 8px;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>AI Stílus:</label>
+                                    <select id="aiStyle" class="form-control">
+                                        <option value="professional">Professzionális</option>
+                                        <option value="casual">Könnyed</option>
+                                        <option value="neutral">Semleges</option>
+                                        <option value="engaging">Vonzó</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Célközönség:</label>
+                                    <select id="aiAudience" class="form-control">
+                                        <option value="general">Általános</option>
+                                        <option value="expert">Szakértő</option>
+                                        <option value="young">Fiatal</option>
+                                        <option value="business">Üzleti</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Brand Voice Irányelvek:</label>
+                                <textarea 
+                                    id="aiBrandVoice" 
+                                    class="form-control" 
+                                    style="min-height: 80px;"
+                                    placeholder="Brand voice irányelvek..."
+                                >A HírMagnet mindig tárgyilagos, informatív és magyar olvasókra fókuszál. Használjunk világos, érthető megfogalmazásokat. Kerüljük a szenzációs címeket.</textarea>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- AI Results Display -->
+                    <div id="aiResults" style="display: none;">
+                        <h4>🎯 AI Módosítási Javaslatok</h4>
+                        <div id="aiResultsContent" class="results-container">
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                            <strong>Műveletek:</strong>
+                            <button id="applyAllBtn" class="btn btn-success">
+                                ✅ Minden Elfogadott Változtatás
+                            </button>
+                            <button id="selectAllBtn" class="btn btn-secondary">
+                                ☑️ Mind Kijelölése
+                            </button>
+                            <button id="deselectAllBtn" class="btn btn-secondary">
+                                ❌ Mind Törlése
+                            </button>
+                            <button id="cancelChangesBtn" class="btn btn-danger">
+                                🗑️ Módosítások Elvetése
+                            </button>
+                            <span style="flex-grow: 1; text-align: right; font-size: 0.85rem; color: var(--admin-text-light);">
+                                <span id="acceptedCount">0</span> elfogadva / <span id="totalCount">0</span> összes
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Processing Status -->
+                    <div id="aiProcessingStatus" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 350px; max-width: 500px; border: 2px solid var(--admin-accent);">
+                        <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 1rem auto; border-width: 4px;"></div>
+                        <h4 style="margin-bottom: 0.5rem;">🤖 AI Feldolgozás folyamatban...</h4>
+                        <div id="aiProcessingMessage" style="color: var(--admin-text-light); margin-bottom: 1rem;"></div>
+                        <div id="aiProcessingDetails" style="background: #f8f9fa; border-radius: 6px; padding: 0.75rem; font-size: 0.85rem;">
+                            <div id="aiProcessingStats">Parancs elemzése...</div>
+                        </div>
+                        <button id="cancelProcessingBtn" class="btn btn-danger btn-sm" style="margin-top: 1rem;">
+                            ⏹️ Megszakítás
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Stats Section -->
+                <section id="statsSection" class="admin-section">
+                    <h2 class="section-title">📊 Rendszer Statisztikák</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                        <div style="background: linear-gradient(135deg, var(--admin-primary), #2b6cb0); color: white; padding: 1.5rem; border-radius: 12px;">
+                            <h3>📰 Összes Cikk</h3>
+                            <div style="font-size: 2rem; font-weight: bold;" id="totalArticles">-</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, var(--admin-success), #10b981); color: white; padding: 1.5rem; border-radius: 12px;">
+                            <h3>✅ Feldolgozott</h3>
+                            <div style="font-size: 2rem; font-weight: bold;" id="processedArticles">-</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, var(--admin-secondary), #4a5568); color: white; padding: 1.5rem; border-radius: 12px;">
+                            <h3>⏳ Feldolgozatlan</h3>
+                            <div style="font-size: 2rem; font-weight: bold;" id="unprocessedArticles">-</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, var(--admin-warning), #f59e0b); color: white; padding: 1.5rem; border-radius: 12px;">
+                            <h3>👁️ Megtekintések</h3>
+                            <div style="font-size: 2rem; font-weight: bold;" id="totalViews">-</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, var(--admin-danger), #ef4444); color: white; padding: 1.5rem; border-radius: 12px;">
+                            <h3>🎵 Audio Lejátszások</h3>
+                            <div style="font-size: 2rem; font-weight: bold;" id="audioPlays">-</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, var(--admin-accent), #3c82f6); color: white; padding: 1.5rem; border-radius: 12px;">
+                            <h3>🔊 Audio Fájlok</h3>
+                            <div style="font-size: 2rem; font-weight: bold;" id="audioArticles">-</div>
+                        </div>
+                    </div>
+                    <button id="refreshStatsBtn" class="btn btn-primary">🔄 Statisztikák Frissítése</button>
+                </section>
+            </main>
+        </div>
+        
+        <!-- Message Container -->
+        <div id="messageContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10001;"></div>
+    </div>
+
+    <!-- AI Command Modal -->
+    <div id="aiCommandModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🤖 AI Műveletek a(z) <span id="aiArticleId"></span>. cikkhez</h3>
+                <span class="close-btn" id="closeAiModalBtn">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>AI Szolgáltató:</label>
+                <select id="aiProvider" class="form-control">
+                    <option value="">Betöltés...</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label>Válassz egy parancsot, vagy írj be egyedit:</label>
+                <input type="text" id="aiCommand" list="aiCommandList" class="form-control" placeholder="Pl: Írj egy rövidebb, ütősebb címet">
+                <datalist id="aiCommandList">
+                    <option value="Javasolj egy jobb, SEO-barát címet.">
+                    <option value="Írj egy 3 mondatos, figyelemfelkeltő összefoglalót.">
+                    <option value="Generálj 5 releváns SEO kulcsszót.">
+                    <option value="Elemezd a cikk hangulatát (pozitív, negatív, semleges).">
+                    <option value="Fordítsd le a címet angolra.">
+                </datalist>
+            </div>
+            <button id="executeAiBtn" class="btn btn-primary" style="margin-top: 1.5rem;">🚀 Parancs Végrehajtása</button>
+        </div>
+    </div>
+    
+    <!-- AI Suggestions Modal -->
+    <div id="aiSuggestionsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">💡 AI Javaslatok</h3>
+                <span class="close-btn" id="closeSuggestionsBtn">&times;</span>
+            </div>
+            <div id="suggestionsContent"></div>
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <button id="applySuggestionsBtn" class="btn btn-success">✅ Kijelöltek Alkalmazása</button>
+                <button id="cancelSuggestionsBtn" class="btn btn-secondary">❌ Mégse</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== HIRMAGNET ADMIN EDITOR - DEUTSCHE PRÄZISION JAVASCRIPT =====
+        // Herr Claus & Gemini von Program Engineering - Kommandozentrale v3.1
+
+        class HirMagnetAdmin {
+            constructor() {
+                this.isAuthenticated = false;
+                this.currentArticleIdForAI = null;
+                this.currentSuggestions = [];
+                this.init();
+            }
+
+            init() {
+                console.log('🎖️ HírMagnet Admin Editor v3.1 wird geladen...');
+                this.setupEventListeners();
+                this.checkAuth();
+            }
+
+            // ========================================================================
+            // ✪ AUTHENTICATION SYSTEM (AUTHENTIFIZIERUNG)
+            // ========================================================================
+            checkAuth() {
+                if (localStorage.getItem('hirmagnet_admin_auth') === 'authenticated_kommandant') {
+                    this.isAuthenticated = true;
+                    this.showAdminInterface();
+                } else {
+                    this.showAuthPanel();
+                }
+            }
+
+            showAuthPanel() {
+                document.getElementById('authPanel').style.display = 'flex';
+                document.getElementById('adminInterface').style.display = 'none';
+                document.getElementById('adminPassword').focus();
+            }
+
+            showAdminInterface() {
+                document.getElementById('authPanel').style.display = 'none';
+                document.getElementById('adminInterface').style.display = 'block';
+                this.updateCurrentOperation('Kommandozentrale bereit. Warten auf Befehle.');
+                this.loadStats();
+            }
+
+            authenticate() {
+                const password = document.getElementById('adminPassword').value;
+                if (password === 'HirMagnetKommandant2025') {
+                    localStorage.setItem('hirmagnet_admin_auth', 'authenticated_kommandant');
+                    this.isAuthenticated = true;
+                    this.showAdminInterface();
+                    this.showMessage('🎖️ Erfolgreich eingeloggt! Willkommen, Kommandant!', 'success');
+                } else {
+                    const authError = document.getElementById('authError');
+                    authError.style.display = 'block';
+                    setTimeout(() => {
+                        authError.style.display = 'none';
+                    }, 3000);
+                }
+            }
+
+            logout() {
+                if (confirm('🎖️ Biztosan ki akar jelentkezni a Kommandozentrale-ból?')) {
+                    localStorage.removeItem('hirmagnet_admin_auth');
+                    this.isAuthenticated = false;
+                    window.location.reload();
+                }
+            }
+
+            // ========================================================================
+            // ✪ EVENT LISTENERS (EREIGNIS-HANDLER)
+            // ========================================================================
+            setupEventListeners() {
+                // Authentication
+                document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.authenticate();
+                });
+                document.getElementById('loginBtn').addEventListener('click', () => this.authenticate());
+                document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+
+                // Navigation
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    if (btn.dataset.section) {
+                        btn.addEventListener('click', () => this.showSection(btn.dataset.section));
+                    }
+                });
+
+                // Search
+                document.getElementById('searchQuery').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.searchArticles();
+                });
+                document.getElementById('searchBtn').addEventListener('click', () => this.searchArticles());
+
+                // Forms
+                document.getElementById('editForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveArticle();
+                });
+
+                document.getElementById('createForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.createArticle();
+                });
+
+                document.getElementById('cancelEditBtn').addEventListener('click', () => this.cancelEdit());
+
+                // Stats
+                document.getElementById('refreshStatsBtn').addEventListener('click', () => this.loadStats());
+
+                // AI Modals
+                document.getElementById('closeAiModalBtn').addEventListener('click', () => this.closeAiModal());
+                document.getElementById('executeAiBtn').addEventListener('click', () => this.executeAiCommand());
+                document.getElementById('closeSuggestionsBtn').addEventListener('click', () => this.closeSuggestionsModal());
+                document.getElementById('cancelSuggestionsBtn').addEventListener('click', () => this.closeSuggestionsModal());
+                document.getElementById('applySuggestionsBtn').addEventListener('click', () => this.applySuggestions());
+            }
+
+            // ========================================================================
+            // ✪ API HELPER, UI MANAGEMENT
+            // ========================================================================
+            async apiCall(endpoint, method = 'GET', body = null) {
+                const options = {
+                    method,
+                    headers: {}
+                };
+                
+                if (body) {
+                    options.headers['Content-Type'] = 'application/json';
+                    options.body = JSON.stringify(body);
+                }
+                
+                try {
+                    const response = await fetch(`/api${endpoint}`, options);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+                        throw new Error(errorData.detail || `HTTP Fehler ${response.status}`);
+                    }
+                    
+                    return response.json();
+                } catch (error) {
+                    this.showMessage(`API Hiba: ${error.message}`, 'danger');
+                    this.updateCurrentOperation('API Kommunikationsfehler!');
+                    throw error;
+                }
+            }
+
+            showSection(sectionName) {
+                document.querySelectorAll('.admin-section').forEach(section => section.classList.remove('active'));
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                
+                document.getElementById(`${sectionName}Section`).classList.add('active');
+                document.querySelector(`button[data-section="${sectionName}"]`).classList.add('active');
+                
+                const sectionTitles = {
+                    search: 'Cikk keresés',
+                    create: 'Új cikk létrehozása',
+                    aiEditor: 'AI Szerkesztő',
+                    stats: 'Statisztikák'
+                };
+                
+                this.updateCurrentOperation(`${sectionTitles[sectionName]} panel aktív.`);
+                
+                if (sectionName === 'stats') this.loadStats();
+                if (sectionName === 'aiEditor' && window.aiEditor) {
+                    aiEditor.updateStatus('AI Szerkesztő aktív');
+                }
+            }
+
+            updateCurrentOperation(operation) {
+                document.getElementById('currentOperation').textContent = operation;
+            }
+
+            showMessage(message, type = 'info', duration = 5000) {
+                const container = document.getElementById('messageContainer');
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `alert alert-${type}`;
+                msgDiv.textContent = message;
+                container.appendChild(msgDiv);
+                
+                setTimeout(() => {
+                    msgDiv.remove();
+                }, duration);
+            }
+
+            escapeHtml(text) {
+                if (text === null || typeof text === 'undefined') return '';
+                return text.toString().replace(/[&<>"']/g, match => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[match]));
+            }
+
+            // ========================================================================
+            // ✪ STATISTICS
+            // ========================================================================
+            async loadStats() {
+                this.updateCurrentOperation('Statistiken werden geladen...');
+                try {
+                    const data = await this.apiCall('/admin/stats');
+                    const stats = data.stats;
+                    
+                    document.getElementById('totalArticles').textContent = stats.total_articles;
+                    document.getElementById('processedArticles').textContent = stats.processed_articles;
+                    document.getElementById('unprocessedArticles').textContent = stats.unprocessed_articles;
+                    document.getElementById('totalViews').textContent = stats.total_views;
+                    document.getElementById('audioPlays').textContent = stats.total_audio_plays;
+                    document.getElementById('audioArticles').textContent = stats.audio_articles;
+                    
+                    this.updateCurrentOperation('Statisztikák frissítve.');
+                } catch (error) {
+                    this.updateCurrentOperation('Statisztikák betöltése sikertelen.');
+                }
+            }
+
+            // ========================================================================
+            // ✪ ARTICLE SEARCH & MANAGEMENT
+            // ========================================================================
+            async searchArticles() {
+                this.updateCurrentOperation('Artikel durchsuchen...');
+                const searchBtn = document.getElementById('searchBtn');
+                searchBtn.innerHTML = '<span class="spinner"></span> Keresés...';
+                searchBtn.disabled = true;
+                
+                try {
+                    const query = document.getElementById('searchQuery').value.trim();
+                    const category = document.getElementById('searchCategory').value;
+                    
+                    const params = new URLSearchParams({
+                        limit: 50,
+                        offset: 0
+                    });
+                    
+                    if (query) params.append('q', query);
+                    if (category) params.append('category', category);
+                    
+                    const data = await this.apiCall(`/admin/articles/search?${params.toString()}`);
+                    this.displaySearchResults(data.articles);
+                    this.updateCurrentOperation(`${data.articles.length} Artikel gefunden.`);
+                } catch (error) {
+                    this.updateCurrentOperation('Fehler bei der Suche.');
+                } finally {
+                    searchBtn.innerHTML = '🔍 Keresés';
+                    searchBtn.disabled = false;
+                }
+            }
+
+            displaySearchResults(articles) {
+                const tbody = document.getElementById('searchResultsBody');
+                tbody.innerHTML = '';
+                document.getElementById('resultsCount').textContent = articles.length;
+                
+                if (articles.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nincs a keresésnek megfelelő cikk.</td></tr>';
+                } else {
+                    articles.forEach(article => {
+                        const row = document.createElement('tr');
+                        row.id = `article-row-${article.id}`;
+                        
+                        const statusBadge = article.is_processed ? 
+                            `<span class="kommando-badge" style="background:var(--admin-success);">Feldolgozott</span>` :
+                            `<span class="kommando-badge" style="background:var(--admin-warning);">Feldolgozatlan</span>`;
+                        
+                        row.innerHTML = `
+                            <td><strong>#${article.id}</strong></td>
+                            <td class="article-title-cell">
+                                <div>${this.escapeHtml(article.title)}</div>
+                                <div class="article-meta">Nézettség: ${article.view_count || 0}</div>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td>${this.escapeHtml(article.source)}</td>
+                            <td>${new Date(article.created_at).toLocaleDateString('hu-HU')}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-secondary btn-sm edit-btn" data-id="${article.id}">✏️ Szerkesztés</button>
+                                    <button class="btn btn-primary btn-sm ai-btn" data-id="${article.id}">🤖 AI</button>
+                                    <button class="btn btn-danger btn-sm delete-btn" data-id="${article.id}">❌ Törlés</button>
+                                </div>
+                            </td>`;
+                        
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Add event listeners to action buttons
+                    document.querySelectorAll('.edit-btn').forEach(btn => {
+                        btn.addEventListener('click', () => this.editArticle(parseInt(btn.dataset.id)));
+                    });
+                    
+                    document.querySelectorAll('.ai-btn').forEach(btn => {
+                        btn.addEventListener('click', () => this.openAiModal(parseInt(btn.dataset.id)));
+                    });
+                    
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', () => this.deleteArticle(parseInt(btn.dataset.id)));
+                    });
+                }
+                
+                document.getElementById('searchResults').style.display = 'block';
+            }
+
+            async deleteArticle(articleId) {
+                if (confirm(`Biztosan törölni akarod a(z) #${articleId} azonosítójú cikket?`)) {
+                    this.updateCurrentOperation(`Artikel #${articleId} wird gelöscht...`);
+                    try {
+                        await this.apiCall(`/admin/articles/${articleId}`, 'DELETE');
+                        document.getElementById(`article-row-${articleId}`).remove();
+                        this.showMessage(`A(z) #${articleId} cikk sikeresen törölve.`, 'success');
+                    } catch (error) {
+                        this.updateCurrentOperation(`Fehler beim Löschen von Artikel #${articleId}.`);
+                    }
+                }
+            }
+
+            async editArticle(articleId) {
+                this.updateCurrentOperation(`Artikel #${articleId} wird zum Bearbeiten geladen...`);
+                try {
+                    const article = await this.apiCall(`/articles/${articleId}`);
+                    this.loadArticleIntoEditor(article);
+                } catch (error) {
+                    this.updateCurrentOperation(`Fehler beim Laden von Artikel #${articleId}.`);
+                }
+            }
+
+            loadArticleIntoEditor(article) {
+                document.getElementById('editArticleId').value = article.id;
+                document.getElementById('editTitle').value = article.title || '';
+                document.getElementById('editCategory').value = article.category || 'general';
+                document.getElementById('editSource').value = article.source || '';
+                document.getElementById('editUrl').value = article.url || '';
+                document.getElementById('editSummary').value = article.summary || '';
+                document.getElementById('editContent').value = article.original_content || '';
+                document.getElementById('editKeywords').value = article.seo_keywords || '';
+                document.getElementById('editSentiment').value = article.sentiment || 'neutral';
+                
+                document.getElementById('articleEditor').style.display = 'block';
+                document.getElementById('articleEditor').scrollIntoView({ behavior: 'smooth' });
+                this.updateCurrentOperation(`Artikel #${article.id} szerkesztése.`);
+            }
+
+            async saveArticle() {
+                const articleId = document.getElementById('editArticleId').value;
+                this.updateCurrentOperation(`Artikel #${articleId} wird gespeichert...`);
+                
+                const articleData = {
+                    title: document.getElementById('editTitle').value,
+                    category: document.getElementById('editCategory').value,
+                    source: document.getElementById('editSource').value,
+                    url: document.getElementById('editUrl').value,
+                    summary: document.getElementById('editSummary').value,
+                    original_content: document.getElementById('editContent').value,
+                    seo_keywords: document.getElementById('editKeywords').value,
+                    sentiment: document.getElementById('editSentiment').value
+                };
+                
+                try {
+                    await this.apiCall(`/admin/articles/${articleId}`, 'PUT', articleData);
+                    this.showMessage(`A(z) #${articleId} cikk sikeresen mentve.`, 'success');
+                    this.cancelEdit();
+                    this.searchArticles();
+                } catch (error) {
+                    this.updateCurrentOperation(`Fehler beim Speichern von Artikel #${articleId}.`);
+                }
+            }
+            
+            cancelEdit() {
+                document.getElementById('articleEditor').style.display = 'none';
+                document.getElementById('editForm').reset();
+                this.updateCurrentOperation('Szerkesztés megszakítva.');
+            }
+            
+            async createArticle() {
+                this.updateCurrentOperation('Neuer Artikel wird erstellt...');
+                
+                const articleData = {
+                    title: document.getElementById('createTitle').value,
+                    category: document.getElementById('createCategory').value,
+                    source: document.getElementById('createSource').value,
+                    url: document.getElementById('createUrl').value,
+                    summary: document.getElementById('createSummary').value,
+                    original_content: document.getElementById('createContent').value,
+                    seo_keywords: document.getElementById('createKeywords').value,
+                    sentiment: document.getElementById('createSentiment').value,
+                    is_processed: true
+                };
+                
+                // Basic validation
+                if (!articleData.title || !articleData.source || !articleData.url) {
+                    this.showMessage('A Cím, Forrás és URL mezők kitöltése kötelező!', 'danger');
+                    return;
+                }
+
+                try {
+                    const result = await this.apiCall('/admin/articles', 'POST', articleData);
+                    this.showMessage(`Új cikk sikeresen létrehozva! ID: ${result.id}`, 'success');
+                    document.getElementById('createForm').reset();
+                    this.loadStats();
+                } catch (error) {
+                    this.updateCurrentOperation('Fehler beim Erstellen des Artikels.');
+                }
+            }
+
+            // ========================================================================
+            // ✪ AI OPERATIONS
+            // ========================================================================
+            async openAiModal(articleId) {
+                this.currentArticleIdForAI = articleId;
+                document.getElementById('aiArticleId').textContent = `#${articleId}`;
+                
+                const providerSelect = document.getElementById('aiProvider');
+                providerSelect.innerHTML = '<option>Betöltés...</option>';
+                document.getElementById('aiCommandModal').style.display = 'flex';
+                
+                try {
+                    const data = await this.apiCall('/admin/ai/providers');
+                    providerSelect.innerHTML = '';
+                    
+                    for (const key in data.providers) {
+                        if (data.providers[key].available) {
+                            const option = document.createElement('option');
+                            option.value = key;
+                            option.textContent = data.providers[key].name;
+                            providerSelect.appendChild(option);
+                        }
+                    }
+                } catch (error) {
+                    providerSelect.innerHTML = '<option>Hiba</option>';
+                }
+            }
+
+            closeAiModal() {
+                document.getElementById('aiCommandModal').style.display = 'none';
+            }
+
+            async executeAiCommand() {
+                const articleId = this.currentArticleIdForAI;
+                const command = document.getElementById('aiCommand').value;
+                const provider = document.getElementById('aiProvider').value;
+                
+                if (!command) {
+                    this.showMessage('Adj meg egy AI parancsot!', 'danger');
+                    return;
+                }
+                
+                this.updateCurrentOperation(`AI parancs végrehajtása #${articleId}...`);
+                this.closeAiModal();
+                this.showMessage('AI parancs elküldve...', 'info');
+                
+                try {
+                    const result = await this.apiCall('/admin/ai/single', 'POST', {
+                        article_id: articleId,
+                        command: command,
+                        ai_provider: provider
+                    });
+                    
+                    if (result.success && result.suggestion) {
+                        this.displaySuggestions([result.suggestion]);
+                    } else {
+                        throw new Error(result.message || "AI hiba.");
+                    }
+                } catch (error) {
+                    this.updateCurrentOperation('AI parancs végrehajtása sikertelen.');
+                }
+            }
+
+            displaySuggestions(suggestions) {
+                this.currentSuggestions = suggestions;
+                const contentDiv = document.getElementById('suggestionsContent');
+                contentDiv.innerHTML = '';
+                
+                let tableHtml = '<table class="suggestion-table"><tr><th>✔</th><th>Mező</th><th>Eredeti</th><th>Javaslat</th><th>Indoklás</th></tr>';
+                
+                suggestions.forEach((s, index) => {
+                    tableHtml += `<tr>
+                        <td><input type="checkbox" id="suggestion-check-${index}" checked></td>
+                        <td><strong>${this.escapeHtml(s.field)}</strong></td>
+                        <td class="suggestion-original">${this.escapeHtml(s.original)}</td>
+                        <td class="suggestion-new">${this.escapeHtml(s.suggested)}</td>
+                        <td><em>${this.escapeHtml(s.reason)}</em></td>
+                    </tr>`;
+                });
+                
+                tableHtml += '</table>';
+                contentDiv.innerHTML = tableHtml;
+                document.getElementById('aiSuggestionsModal').style.display = 'flex';
+            }
+
+            closeSuggestionsModal() {
+                document.getElementById('aiSuggestionsModal').style.display = 'none';
+            }
+
+            async applySuggestions() {
+                const approvedSuggestions = [];
+                
+                this.currentSuggestions.forEach((suggestion, index) => {
+                    if (document.getElementById(`suggestion-check-${index}`).checked) {
+                        approvedSuggestions.push(suggestion);
+                    }
+                });
+                
+                if (approvedSuggestions.length === 0) {
+                    this.showMessage('Nincs kijelölt javaslat.', 'info');
+                    return;
+                }
+                
+                this.updateCurrentOperation('AI javaslatok alkalmazása...');
+                this.closeSuggestionsModal();
+                
+                try {
+                    const result = await this.apiCall('/admin/ai/apply-suggestions', 'POST', approvedSuggestions);
+                    this.showMessage(`${result.applied_count} javaslat alkalmazva.`, 'success');
+                    this.searchArticles();
+                } catch (error) {
+                    this.updateCurrentOperation('AI javaslatok alkalmazása sikertelen.');
+                }
+            }
+        }
+
+        // ========================================================================
+        // ✪ GLOBAL INITIALIZATION
+        // ========================================================================
+        let admin;
+        let aiEditor;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            admin = new HirMagnetAdmin();
+            aiEditor = new EnhancedAIEditor();
+            window.aiEditor = aiEditor; // Global access
+            console.log('🎖️ HírMagnet Admin Editor v3.1 - Deutsche Präzision vollständig geladen!');
+            console.log('🤖 Enhanced AI Editor with Real API Integration initialized');
+        });
+    </script>
+</body>
+</html>

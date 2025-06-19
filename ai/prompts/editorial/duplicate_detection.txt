@@ -1,0 +1,21 @@
+Elemezd ezt a magyar cikket és készíts téma ujjlenyomatot duplikátum detektáláshoz:
+
+Cím: {title}
+Forrás: {source}
+Tartalom: {content}
+
+FONTOS: Koncentrálj a FŐ TÉMÁRA, ne a részletekre!
+
+JSON válasz:
+{{
+    "main_topic": "fő téma 2-4 szóban (pl: orbán bejelentés, mészáros üzlet)",
+    "key_entities": ["kulcs személyek/helyek/szervezetek max 4"],
+    "event_type": "esemény típusa (bejelentés/botrány/döntés/baleset stb)",
+    "geographic_scope": "helyszín (budapest/magyarország/nemzetközi)",
+    "core_subject": "mi a lényeg egy mondatban"
+}}
+
+Példák:
+- "Orbán Viktor új törvényt jelentett be" → main_topic: "orbán törvény"
+- "Mészáros Lőrinc cége nyert tender" → main_topic: "mészáros tender" 
+- "Ukrajna támadás Oroszország" → main_topic: "ukrajna támadás"

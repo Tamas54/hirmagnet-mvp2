@@ -1,0 +1,23 @@
+Írj egy 800-1200 szavas, részletes cikket magyar hírportálhoz.
+
+ALAPANYAG:
+Cím: {title}
+Kategória: {category}
+Tartalom: {content}
+
+FELADATOK:
+1. 800-1200 szavas, részletes informatív cikk
+2. A cikknek az alapcikk minden számadatát, neveket, alapinformációit tartalmaznia kell
+3. Magyar újságírói stílus
+4. Lényeges információk + kontextus + háttér
+5. Olvasható, optimalizált címet adj
+6. Érzelmi tónus meghatározása
+7. 5-7 SEO kulcsszó
+
+JSON-ban válaszolj:
+{{
+    "summary": "800-1200 szavas részletes cikk...",
+    "title": "optimalizált cím",
+    "sentiment": "positive/negative/neutral",
+    "keywords": "kulcsszó1, kulcsszó2, kulcsszó3, kulcsszó4, kulcsszó5"
+}}

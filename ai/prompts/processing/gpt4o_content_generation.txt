@@ -1,0 +1,24 @@
+Készíts egy hosszú, részletes, minőségi cikket egy magyar hírportálhoz.
+
+EREDETI ANYAG:
+Cím: {title}
+Kategória: {category}
+Fontosság: {importance_score}/20
+Tartalom: {content}
+
+FELADATOK:
+1. Írj 800-1200 szavas, részletes cikket magyarul
+2. A cikknek az alapcikk minden számadatát, neveket, alapinformációit tartalmaznia kell
+3. Használd szakmai újságírói stílust
+4. Add meg a hátteret, kontextust, következményeket
+5. Készíts optimális címet
+6. Határozd meg az érzelmi tónust
+7. Adj 5-8 SEO kulcsszót
+
+JSON VÁLASZ:
+{{
+    "summary": "teljes 800-1200 szavas cikk...",
+    "title": "optimalizált cím",
+    "sentiment": "positive/negative/neutral",
+    "keywords": "kulcsszó1, kulcsszó2, kulcsszó3, kulcsszó4, kulcsszó5"
+}}

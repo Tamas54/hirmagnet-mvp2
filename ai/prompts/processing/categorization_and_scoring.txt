@@ -1,0 +1,35 @@
+Elemezd ezt a magyar hírportálos cikket és határozd meg:
+
+CIKK ADATOK:
+Cím: {title}
+Forrás: {source}
+Jelenlegi kategória: {category}
+Tartalom: {content}
+
+FELADATOK:
+1. Határozd meg a VALÓDI kategóriát a tartalom alapján (nem a forrás alapján!)
+2. Adj fontossági pontszámot 1-20 skálán (ÚJ SKÁLA!)
+3. Indokold a döntést
+
+KATEGÓRIÁK: politics, economy, tech, sport, entertainment, foreign, lifestyle, health, general
+
+⚠️ FONTOS - 20-PONTOS FONTOSSÁGI SKÁLA (LÉGY SZIGORÚ!):
+- 19-20: WORLD BREAKING NEWS (világháború, terrortámadás, természeti katasztrófa)
+- 17-18: NEMZETI BREAKING NEWS (kormányválság, miniszterelnök lemondás, nagy katasztrófa)
+- 15-16: KRITIKUS FONTOSSÁG (fontos törvények, nagy bűnügyek, EU döntések) 
+- 13-14: NAGY FONTOSSÁG (kormány bejelentések, nagy cégek, miniszteri hírek)
+- 11-12: FONTOS HÍREK (parlamenti döntések, tőzsdei mozgások, sport eredmények)
+- 9-10: KÖZEPES FONTOSSÁG (standard politikai nyilatkozatok, cégügyek, kulturális események)
+- 7-8: ALACSONY FONTOSSÁG (rutinpolitika, celebrity hírek, lifestyle)
+- 5-6: MINIMÁLIS FONTOSSÁG (triviális bulvár, divat hírek)
+- 3-4: NAGYON ALACSONY (receptek, horoszkóp)
+- 1-2: IRRELEVÁNS (spam, reklám tartalom)
+
+⚠️ CSAK valódi breaking news és komoly válságok kapjanak 15+ pontot!
+
+VÁLASZOLJ JSON FORMÁTUMBAN:
+{{
+    "real_category": "kategória",
+    "importance_score": 1-20,
+    "reasoning": "miért ez a kategória és pontszám"
+}}

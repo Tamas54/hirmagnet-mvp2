@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS Feed - HírMagnet</title>
+    <style>
+        :root {
+            --main-bg-color: #f8f9fa;
+            --header-bg-color: #1A4314;
+            --nav-tabs-bg-color: rgba(255, 255, 255, 0.9); 
+            --card-bg-color: #ffffff;
+            --text-primary-color: #212529;
+            --text-secondary-color: #495057;
+            --text-muted-color: #6c757d;
+            --accent-color: #3A7BCE; 
+            --accent-color-hover: #2c6cb5;
+            --light-gray-border: rgba(0, 0, 0, 0.1);
+            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+            --card-hover-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --header-logo-text-color: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            background-color: var(--main-bg-color);
+            color: var(--text-secondary-color);
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .header {
+            background: var(--header-bg-color);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 0.75rem 0;
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-link { 
+            text-decoration: none; 
+            color: inherit; 
+            display: inline-flex; 
+            align-items: center; 
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: var(--header-logo-text-color);
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .logo-icon {
+            font-size: 1.9rem;
+            color: var(--accent-color);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.2rem;
+            background: var(--nav-tabs-bg-color);
+            padding: 0.4rem;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            white-space: nowrap;
+            flex-grow: 1;
+            justify-content: center;
+            margin-left: 0.75rem;
+            margin-right: 0.75rem;
+            flex-shrink: 1;
+            min-width: 0;
+        }
+
+        .nav-tab {
+            padding: 0.55rem 0.8rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary-color);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            flex-shrink: 0;
+            font-size: 0.78rem;
+        }
+
+        .nav-tab:hover {
+            background-color: rgba(0,0,0,0.05);
+            color: var(--accent-color);
+        }
+
+        .nav-tab.active {
+            background: var(--accent-color);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(58, 123, 206, 0.3);
+        }
+
+        .premium-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.6rem;
+            border-radius: 50%;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .premium-btn:hover {
+            background: var(--accent-color-hover);
+            transform: translateY(-1px) scale(1.05);
+            box-shadow: 0 4px 10px rgba(58, 123, 206, 0.2);
+        }
+
+        /* Loading and Error States */
+        .loading-container, .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--light-gray-border);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-content h2 {
+            color: var(--text-primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .retry-btn, .back-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .retry-btn {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .retry-btn:hover {
+            background: var(--accent-color-hover);
+        }
+
+        .back-btn {
+            background: #e9ecef;
+            color: var(--text-secondary-color);
+        }
+
+        .back-btn:hover {
+            background: #dee2e6;
+        }
+
+        /* Article Page Layout */
+        .article-page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .article-layout-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+        }
+
+        .article-content-main {
+            background: var(--card-bg-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .breadcrumbs {
+            font-size: 0.9rem;
+            color: var(--text-muted-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumbs a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        .breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+
+        .article-main-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary-color);
+            margin-bottom: 1.5rem;
+            line-height: 1.3;
+        }
+
+        .article-meta-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .meta-item strong {
+            color: var(--text-primary-color);
+        }
+
+        .article-share-buttons {
+            margin-left: auto;
+        }
+
+        .ai-processed-notice {
+            background: rgba(58, 123, 206, 0.1);
+            border: 1px solid rgba(58, 123, 206, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary-color);
+            margin-bottom: 1rem;
+        }
+
+        /* RSS Items Styling */
+        .rss-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .rss-item {
+            background: var(--card-bg-color);
+            border: 1px solid var(--light-gray-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: var(--card-shadow);
+        }
+
+        .rss-item:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--card-hover-shadow);
+            transform: translateY(-2px);
+        }
+
+        .rss-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-color);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .rss-item:hover::before {
+            opacity: 0.7;
+        }
+
+        .rss-item-header {
+            margin-bottom: 0.75rem;
+        }
+
+        .rss-item-title {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .rss-item-link {
+            color: var(--text-primary-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .rss-item-link:hover {
+            color: var(--accent-color);
+        }
+
+        .rss-item-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted-color);
+            flex-wrap: wrap;
+        }
+
+        .rss-item-time {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .rss-item-description {
+            margin: 0.75rem 0;
+            color: var(--text-secondary-color);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .rss-item-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--light-gray-border);
+        }
+
+        .read-more-btn {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .read-more-btn:hover {
+            background: var(--accent-color-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(58, 123, 206, 0.25);
+        }
+
+        .no-items {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted-color);
+            font-size: 1.1rem;
+            background: var(--card-bg-color);
+            border-radius: 12px;
+            border: 1px solid var(--light-gray-border);
+        }
+
+        /* Sidebar Styles */
+        .article-sidebar-column {
+            display: grid;
+            gap: 1.5rem;
+            align-content: start;
+        }
+
+        .sidebar-section {
+            background: var(--card-bg-color);
+            border: 1px solid var(--light-gray-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary-color);
+        }
+
+        /* Financial Rates */
+        .rate-category {
+            margin-bottom: 0.7rem;
+        }
+
+        .rate-category h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary-color);
+            margin-bottom: 0.3rem;
+            padding-bottom: 0.2rem;
+            border-bottom: 1px solid var(--light-gray-border);
+        }
+
+        .rate-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .rate-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.2rem 0;
+            border-bottom: 1px dotted rgba(0,0,0,0.05);
+        }
+
+        .rate-pair {
+            font-weight: 500;
+            color: var(--text-secondary-color);
+            flex-basis: 40%;
+        }
+
+        .rate-value {
+            font-weight: 600;
+            color: var(--text-primary-color);
+            flex-basis: 35%;
+            text-align: right;
+        }
+
+        .rate-change {
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 0.1rem 0.25rem;
+            border-radius: 3px;
+            flex-basis: 25%;
+            text-align: right;
+        }
+
+        .rate-change.up {
+            color: #28a745;
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+
+        .rate-change.down {
+            color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .data-source-notice {
+            font-size: 0.65rem;
+            color: var(--text-muted-color);
+            text-align: center;
+            margin-top: 0.6rem;
+            font-style: italic;
+        }
+
+        /* Weather Widget */
+        .weather-widget-link {
+            display: block;
+            text-decoration: none;
+            color: var(--text-secondary-color);
+            padding: 0.8rem;
+            border-radius: 8px;
+            background-color: rgba(255,255,255,0.7);
+            border: 1px solid var(--light-gray-border);
+            transition: all 0.2s ease;
+        }
+
+        .weather-widget-link:hover {
+            background-color: var(--card-bg-color);
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .weather-widget-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .weather-main {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .weather-icon-placeholder {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+        }
+
+        .weather-temp-placeholder {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary-color);
+        }
+
+        .weather-location {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary-color);
+        }
+
+        .weather-details-link {
+            font-size: 0.7rem;
+            color: var(--accent-color-hover);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Trending Items */
+        .trending-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .trending-item:hover {
+            background: #e9ecef;
+            transform: translateX(3px);
+            border-color: var(--accent-color);
+        }
+
+        .trending-item span:last-child {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Ad Slots */
+        .ad-slot-article-top, .ad-slot-article-bottom {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .ad-slot-article-sidebar {
+            text-align: center;
+        }
+
+        .ad-slot-article-sidebar .sidebar-title {
+            font-size: 0.75rem;
+            color: var(--text-muted-color);
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-weight: 400;
+        }
+
+        .ad-slot-article-sidebar img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--text-secondary-color);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Debug Panel */
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-family: monospace;
+            z-index: 9999;
+            max-width: 300px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .debug-panel h4 {
+            margin-bottom: 0.5rem;
+            color: #ffd700;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .article-layout-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .article-page-container {
+                padding: 1rem;
+            }
+            
+            .article-content-main {
+                padding: 1.5rem;
+            }
+            
+            .article-main-title {
+                font-size: 1.5rem;
+            }
+            
+            .rss-item {
+                padding: 1.25rem;
+            }
+            
+            .rss-item-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Debug Info Panel -->
+    <div id="debugInfo" style="display: none;">
+        <div class="debug-panel">
+            <h4>🐛 RSS Debug Info</h4>
+            <div id="debugContent"></div>
+        </div>
+    </div>
+
+    <!-- Header with Navigation -->
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo-link" title="Vissza a HírMagnet főoldalára">
+                <div class="logo"><span class="logo-icon">🧲</span> HírMagnet</div>
+            </a>
+            <nav class="nav-tabs">
+                <button class="nav-tab" onclick="location.href='index.html'">🌟 Összes</button>
+                <button class="nav-tab" data-category="general">👥 Közélet</button> 
+                <button class="nav-tab" data-category="foreign">🌍 Külföld</button>
+                <button class="nav-tab" data-category="politics">🏛️ Politika</button>
+                <button class="nav-tab" data-category="economy">📈 Gazdaság</button>
+                <button class="nav-tab" data-category="tech">💻 Tech</button>
+                <button class="nav-tab" data-category="entertainment">👠 Bulvár</button>
+                <button class="nav-tab" data-category="sport">⚽ Sport</button>
+                <button class="nav-tab" data-category="cars">🚗 Autók</button>
+                <button class="nav-tab" data-category="lifestyle">✨ Életmód</button>
+            </nav>
+            <div class="user-section"><button class="premium-btn" title="Premium" onclick="alert('🚀 Premium funkció hamarosan elérhető!')">✨</button></div>
+        </div>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loadingContainer" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>RSS feed betöltése...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorContainer" class="error-container" style="display: none;">
+        <div class="error-content">
+            <h2>🚫 Hiba történt</h2>
+            <p id="errorMessage">Az RSS feed nem tölthető be</p>
+            <div class="error-actions">
+                <button onclick="window.rssViewer.retry()" class="retry-btn">🔄 Újra</button>
+                <a href="index.html" class="back-btn">🏠 Vissza a főoldalra</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- RSS Feed Content -->
+    <div id="rssContainer" class="article-page-container" style="display: none;">
+        <div class="article-layout-container">
+            <!-- Main Content Area -->
+            <div class="article-content-main">
+                <!-- Breadcrumbs -->
+                <div class="breadcrumbs">
+                    <a href="index.html">HírMagnet</a> &raquo; <a href="index.html#feeds">RSS Források</a> &raquo; <span id="breadcrumbSource">RSS Feed</span>
+                </div>
+
+                <!-- RSS Header -->
+                <h1 id="rssTitle" class="article-main-title">RSS Feed</h1>
+
+                <!-- RSS Meta Bar -->
+                <div class="article-meta-bar" id="rssMetaBar">
+                    <span class="meta-item"><strong>Forrás:</strong> <a id="rssOriginalLink" href="#" target="_blank" rel="noopener noreferrer"><span id="rssUrl">URL betöltés...</span></a></span>
+                    <span class="meta-item"><strong>Kategória:</strong> <span id="rssCategory">Kategória</span></span>
+                    <span class="meta-item"><strong>Utolsó frissítés:</strong> <span id="rssUpdateTime">most</span></span>
+                    <span class="meta-item"><strong>Hírek száma:</strong> <span id="rssItemCount">0</span></span>
+                    <div class="article-share-buttons">
+                        <a href="index.html" class="back-btn">← Vissza</a>
+                    </div>
+                </div>
+
+                <!-- RSS Description -->
+                <div id="rssDescription" class="ai-processed-notice" style="display: none;">
+                    <p id="rssDescriptionText"></p>
+                </div>
+
+                <!-- Ad Slot -->
+                <div class="ad-slot-article-top">
+                    <img src="https://via.placeholder.com/728x90?text=Hirdetés+RSS+Feed+Felett" alt="Hirdetés">
+                </div>
+
+                <!-- RSS Items Section -->
+                <div class="rss-items-section">
+                    <h2 class="section-title">📰 Hírek</h2>
+                    <div id="rssItemsList" class="rss-items-list">
+                        <!-- RSS items will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Ad Slot Bottom -->
+                <div class="ad-slot-article-bottom">
+                    <img src="https://via.placeholder.com/728x90?text=Hirdetés+RSS+Feed+Alatt" alt="Hirdetés">
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <aside class="article-sidebar-column">
+                <!-- Financial Rates Widget -->
+                <div class="sidebar-section financial-rates-section">
+                    <h3 class="sidebar-title">Árfolyamok</h3>
+                    <div class="financial-rates-content" id="financialRatesContent">
+                        <div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">
+                            <div>💰 Árfolyam adatok betöltése...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weather Widget -->
+                <div class="sidebar-section weather-sidebar-section">
+                    <h3 class="sidebar-title">Időjárás</h3>
+                    <div id="weatherContent">
+                        <a href="https://www.idojaras.hu/" target="_blank" rel="noopener noreferrer" class="weather-widget-link">
+                            <div class="weather-widget-content">
+                                <div class="weather-main">
+                                    <span class="weather-icon-placeholder">🌤️</span>
+                                    <span class="weather-temp-placeholder">Betöltés...</span>
+                                </div>
+                                <p class="weather-location">Budapest</p>
+                                <span class="weather-details-link">Részletek &raquo;</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Trending Widget -->
+                <div class="sidebar-section" id="trendingSidebar">
+                    <h3 class="sidebar-title">Trending</h3>
+                    <div id="trendingItems">
+                        <div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">
+                            <div>📊 Trending adatok betöltése...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ad Slot Sidebar -->
+                <div class="sidebar-section ad-slot-article-sidebar">
+                    <h3 class="sidebar-title">Hirdetés</h3>
+                    <img src="https://via.placeholder.com/250x250?text=RSS+Oldalsáv+Reklám" alt="Hirdetés">
+                </div>
+            </aside>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 HírMagnet - Minden jog fenntartva.</p>
+        <p><a href="#">Kapcsolat</a> | <a href="#">Adatvédelmi Nyilatkozat</a> | <a href="#">Impresszum</a></p>
+    </footer>
+
+    <!-- Complete Standalone JavaScript -->
+    <script>
+        // ===== STANDALONE RSS VIEWER - NO EXTERNAL DEPENDENCIES =====
+        
+        class RSSViewer {
+            constructor() {
+                this.rssUrl = null;
+                this.sourceName = null;
+                this.sourceCategory = null;
+                this.feedData = null;
+                this.debugMode = window.location.hash.includes('debug') || window.location.search.includes('debug=true');
+                this.init();
+            }
+
+            init() {
+                console.log('🧲 RSS Viewer inicializálása - Standalone Version...');
+                
+                if (this.debugMode) {
+                    this.showDebugPanel();
+                    this.debugLog('RSS Viewer initialized with debug mode');
+                }
+                
+                this.parseUrlParameters();
+                
+                if (!this.rssUrl) {
+                    this.showError('Nincs megadva RSS URL');
+                    this.debugLog('ERROR: No RSS URL found in parameters');
+                    return;
+                }
+
+                this.debugLog(`RSS URL: ${this.rssUrl}`);
+                this.debugLog(`Source: ${this.sourceName}`);
+                this.debugLog(`Category: ${this.sourceCategory}`);
+                
+                this.setupBasicUI();
+                this.loadRSSFeed();
+                this.loadSidebarData();
+            }
+
+            // Debug functions
+            showDebugPanel() {
+                const debugEl = document.getElementById('debugInfo');
+                if (debugEl) debugEl.style.display = 'block';
+            }
+
+            debugLog(message) {
+                if (!this.debugMode) return;
+                console.log(`🧲 RSS DEBUG: ${message}`);
+                const debugContent = document.getElementById('debugContent');
+                if (debugContent) {
+                    const timestamp = new Date().toLocaleTimeString();
+                    debugContent.innerHTML = `${timestamp}: ${message}<br>` + debugContent.innerHTML;
+                    const lines = debugContent.innerHTML.split('<br>');
+                    if (lines.length > 10) {
+                        debugContent.innerHTML = lines.slice(0, 10).join('<br>');
+                    }
+                }
+            }
+
+            // Utility functions
+            extractDomain(url) {
+                try {
+                    const domain = new URL(url).hostname;
+                    return domain.replace('www.', '');
+                } catch {
+                    return url;
+                }
+            }
+
+            getMainSiteUrl(rssUrl) {
+                try {
+                    const url = new URL(rssUrl);
+                    return `${url.protocol}//${url.hostname}`;
+                } catch {
+                    return rssUrl;
+                }
+            }
+
+            getCategoryName(categoryCode) {
+                const categories = {
+                    'general': 'Közélet',
+                    'foreign': 'Külföld',
+                    'politics': 'Politika', 
+                    'economy': 'Gazdaság',
+                    'tech': 'Tech',
+                    'entertainment': 'Bulvár',
+                    'sport': 'Sport',
+                    'cars': 'Autók',
+                    'lifestyle': 'Életmód'
+                };
+                return categories[categoryCode] || categoryCode;
+            }
+
+            formatTimeAgo(date) {
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                
+                if (diffMins < 60) {
+                    return diffMins <= 1 ? '1 perce' : `${diffMins} perce`;
+                } else if (diffHours < 24) {
+                    return `${diffHours} órája`;
+                } else {
+                    const diffDays = Math.floor(diffHours / 24);
+                    return `${diffDays} napja`;
+                }
+            }
+
+            formatNumber(num) {
+                if (num >= 1000000) {
+                    return Math.floor(num / 100000) / 10 + 'M';
+                } else if (num >= 1000) {
+                    return Math.floor(num / 100) / 10 + 'k';
+                }
+                return num.toString();
+            }
+
+            truncateText(text, maxLength) {
+                if (!text || text.length <= maxLength) return text || '';
+                return text.substring(0, maxLength) + '...';
+            }
+
+            escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            stripHtml(html) {
+                if (!html) return '';
+                const tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                return tmp.textContent || tmp.innerText || '';
+            }
+
+            getElementText(parent, tagName) {
+                const element = parent.querySelector(tagName);
+                return element ? element.textContent.trim() : '';
+            }
+
+            parseUrlParameters() {
+                const urlParams = new URLSearchParams(window.location.search);
+                this.rssUrl = urlParams.get('url');
+                this.sourceName = urlParams.get('name') || 'Ismeretlen forrás';
+                this.sourceCategory = urlParams.get('category') || 'general';
+                
+                if (this.debugMode) {
+                    alert(`DEBUG: RSS Parameters\nURL: ${this.rssUrl}\nName: ${this.sourceName}\nCategory: ${this.sourceCategory}`);
+                }
+            }
+
+            setupBasicUI() {
+                const breadcrumbSource = document.getElementById('breadcrumbSource');
+                if (breadcrumbSource) {
+                    breadcrumbSource.textContent = this.sourceName;
+                }
+
+                document.title = `${this.sourceName} - RSS Feed - HírMagnet`;
+                
+                const rssTitle = document.getElementById('rssTitle');
+                if (rssTitle) {
+                    rssTitle.textContent = this.sourceName;
+                }
+
+                const rssUrl = document.getElementById('rssUrl');
+                if (rssUrl) {
+                    const domain = this.extractDomain(this.rssUrl);
+                    rssUrl.textContent = domain;
+                }
+
+                const rssCategory = document.getElementById('rssCategory');
+                if (rssCategory) {
+                    rssCategory.textContent = this.getCategoryName(this.sourceCategory);
+                }
+
+                const originalLink = document.getElementById('rssOriginalLink');
+                if (originalLink) {
+                    const mainUrl = this.getMainSiteUrl(this.rssUrl);
+                    originalLink.href = mainUrl;
+                }
+
+                this.setActiveCategory();
+            }
+
+            setActiveCategory() {
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                    if (tab.dataset.category === this.sourceCategory) {
+                        tab.classList.add('active');
+                    }
+                });
+            }
+
+            async loadRSSFeed() {
+                try {
+                    this.debugLog(`Loading RSS feed: ${this.rssUrl}`);
+                    
+                    const response = await this.fetchRSSFeed(this.rssUrl);
+                    
+                    if (!response.success) {
+                        throw new Error(response.error || 'RSS feed betöltési hiba');
+                    }
+
+                    this.feedData = response.data;
+                    
+                    if (!this.feedData) {
+                        throw new Error('RSS feed data is null or undefined');
+                    }
+                    
+                    if (!this.feedData.items) {
+                        this.feedData.items = [];
+                        this.debugLog('WARNING: No items in RSS feed, using empty array');
+                    }
+                    
+                    this.debugLog(`RSS feed loaded: ${this.feedData.items.length} items`);
+                    
+                    this.renderRSSFeed();
+                    
+                } catch (error) {
+                    console.error('RSS feed betöltési hiba:', error);
+                    this.debugLog(`RSS load error: ${error.message}`);
+                    this.showError(`RSS feed betöltési hiba: ${error.message}`);
+                }
+            }
+
+            async fetchRSSFeed(url) {
+                try {
+                    // Try server-side RSS proxy first
+                    const serverResponse = await fetch(`/api/rss-proxy?url=${encodeURIComponent(url)}`);
+                    
+                    if (serverResponse.ok) {
+                        const apiResponse = await serverResponse.json();
+                        this.debugLog(`API Response success: ${apiResponse.success}`);
+                        
+                        // *** KRITIKUS JAVÍTÁS: API válasz dupla wrapping kezelése ***
+                        if (apiResponse.success) {
+                            this.debugLog(`API returned ${apiResponse.data.items ? apiResponse.data.items.length : 0} items`);
+                            return { success: true, data: apiResponse.data };
+                        } else {
+                            throw new Error(apiResponse.error || 'API hiba');
+                        }
+                    }
+                    
+                    // Try direct fetch (will likely fail due to CORS)
+                    this.debugLog('Server RSS proxy not available, trying direct fetch...');
+                    const directResponse = await fetch(url, { mode: 'cors' });
+                    
+                    if (!directResponse.ok) {
+                        throw new Error(`HTTP ${directResponse.status}: ${directResponse.statusText}`);
+                    }
+                    
+                    const text = await directResponse.text();
+                    const parsedData = this.parseRSSXML(text);
+                    return { success: true, data: parsedData };
+                    
+                } catch (error) {
+                    this.debugLog('Direct fetch failed, using mock data for demo');
+                    return this.getMockRSSData();
+                }
+            }
+
+            parseRSSXML(xmlText) {
+                try {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                    
+                    let channel = xmlDoc.querySelector('rss channel');
+                    if (!channel) {
+                        channel = xmlDoc.querySelector('feed');
+                    }
+                    
+                    if (!channel) {
+                        throw new Error('Invalid RSS/Atom format');
+                    }
+                    
+                    const title = this.getElementText(channel, 'title') || this.sourceName;
+                    const description = this.getElementText(channel, 'description') || '';
+                    const link = this.getElementText(channel, 'link') || '';
+                    
+                    const items = [];
+                    const itemElements = xmlDoc.querySelectorAll('item, entry');
+                    
+                    itemElements.forEach((item, index) => {
+                        if (index < 50) {
+                            const itemData = {
+                                title: this.getElementText(item, 'title') || `Cím nélkül ${index + 1}`,
+                                link: this.getElementText(item, 'link') || '#',
+                                description: this.getElementText(item, 'description') || this.getElementText(item, 'summary') || '',
+                                pubDate: this.getElementText(item, 'pubDate') || this.getElementText(item, 'published') || '',
+                                guid: this.getElementText(item, 'guid') || `item-${index}`
+                            };
+                            
+                            itemData.description = this.stripHtml(itemData.description);
+                            items.push(itemData);
+                        }
+                    });
+                    
+                    return {
+                        title,
+                        description,
+                        link,
+                        items,
+                        lastUpdated: new Date().toISOString()
+                    };
+                    
+                } catch (error) {
+                    throw new Error(`RSS parsing error: ${error.message}`);
+                }
+            }
+
+            getMockRSSData() {
+                console.log('🧲 Generating enhanced mock RSS data...');
+                
+                return {
+                    success: true,
+                    data: {
+                        title: this.sourceName,
+                        description: `${this.sourceName} hírek - Demo verzió (CORS korlátok miatt élő RSS nem elérhető)`,
+                        link: this.getMainSiteUrl(this.rssUrl),
+                        lastUpdated: new Date().toISOString(),
+                        items: [
+                            {
+                                title: `${this.debugMode ? '[DEMO] ' : ''}Friss hír: ${this.sourceName} jelentése a gazdasági helyzetről`,
+                                link: this.getMainSiteUrl(this.rssUrl) + '/hirek/gazdasag-1',
+                                description: 'A legfrissebb gazdasági elemzés szerint jelentős változások várhatóak a következő negyedévben. A szakértők optimisták a jövőt illetően, különös tekintettel az inflációs mutatókra.',
+                                pubDate: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+                                guid: 'demo-1'
+                            },
+                            {
+                                title: `${this.debugMode ? '[DEMO] ' : ''}Technológiai áttörés: ${this.sourceName} exkluzív interjúja`,
+                                link: this.getMainSiteUrl(this.rssUrl) + '/hirek/tech-2',
+                                description: 'Egy úttörő technológiai fejlesztésről számolnak be a kutatók, amely forradalmasíthatja az iparágat. Az innováció különösen az energiahatékonyság terén jelenthet előrelépést.',
+                                pubDate: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+                                guid: 'demo-2'
+                            },
+                            {
+                                title: `${this.debugMode ? '[DEMO] ' : ''}Politikai elemzés: Mi várható a következő hónapban?`,
+                                link: this.getMainSiteUrl(this.rssUrl) + '/hirek/politika-3',
+                                description: 'A politikai szakértők szerint jelentős döntések várhatóak a közeljövőben. Az elemzők különböző forgatókönyveket vázolnak fel a lehetséges kimenetelekkel kapcsolatban.',
+                                pubDate: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+                                guid: 'demo-3'
+                            },
+                            {
+                                title: `${this.debugMode ? '[DEMO] ' : ''}Sport hírek: Fantasztikus eredmények a hétvégén`,
+                                link: this.getMainSiteUrl(this.rssUrl) + '/hirek/sport-4',
+                                description: 'A hétvégi sportesemények rendkívül izgalmasnak bizonyultak. Számos meglepetés eredmény született, amely felkavarta a bajnokság állását.',
+                                pubDate: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+                                guid: 'demo-4'
+                            },
+                            {
+                                title: `${this.debugMode ? '[DEMO] ' : ''}Kultúra: Új kiállítás nyílt a fővárosban`,
+                                link: this.getMainSiteUrl(this.rssUrl) + '/hirek/kultura-5',
+                                description: 'Egy lenyűgöző új kiállítás várja a látogatókat a főváros egyik legjelentősebb múzeumában. A tárlat egyedülálló műalkotásokat mutat be a nagyközönségnek.',
+                                pubDate: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+                                guid: 'demo-5'
+                            },
+                            {
+                                title: `${this.debugMode ? '[DEMO] ' : ''}Időjárás: Változékony idő várható a héten`,
+                                link: this.getMainSiteUrl(this.rssUrl) + '/hirek/idojaras-6',
+                                description: 'A meteorológusok változatos időjárási feltételekre figyelmeztetnek a következő napokra vonatkozóan. Érdemes figyelemmel kísérni az előrejelzéseket.',
+                                pubDate: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+                                guid: 'demo-6'
+                            }
+                        ]
+                    }
+                };
+            }
+
+            renderRSSFeed() {
+                this.debugLog('Rendering RSS feed');
+                
+                const loadingContainer = document.getElementById('loadingContainer');
+                const rssContainer = document.getElementById('rssContainer');
+                
+                if (loadingContainer) loadingContainer.style.display = 'none';
+                if (rssContainer) rssContainer.style.display = 'block';
+
+                if (this.feedData && this.feedData.title && this.feedData.title !== this.sourceName) {
+                    const rssTitle = document.getElementById('rssTitle');
+                    if (rssTitle) {
+                        rssTitle.textContent = this.feedData.title;
+                    }
+                }
+
+                if (this.feedData && this.feedData.description) {
+                    const rssDescription = document.getElementById('rssDescription');
+                    const rssDescriptionText = document.getElementById('rssDescriptionText');
+                    if (rssDescription && rssDescriptionText) {
+                        rssDescriptionText.textContent = this.feedData.description;
+                        rssDescription.style.display = 'block';
+                    }
+                }
+
+                this.updateStats();
+                this.renderRSSItems();
+                
+                this.debugLog('RSS feed rendering complete');
+            }
+
+            updateStats() {
+                const itemCount = document.getElementById('rssItemCount');
+                const updateTime = document.getElementById('rssUpdateTime');
+                
+                if (itemCount) {
+                    const count = (this.feedData && this.feedData.items) ? this.feedData.items.length : 0;
+                    itemCount.textContent = count;
+                }
+                
+                if (updateTime) {
+                    updateTime.textContent = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit'});
+                }
+            }
+
+            renderRSSItems() {
+                const itemsList = document.getElementById('rssItemsList');
+                if (!itemsList) return;
+                
+                itemsList.innerHTML = '';
+
+                if (!this.feedData || !this.feedData.items || this.feedData.items.length === 0) {
+                    itemsList.innerHTML = '<div class="no-items">📰 Nincsenek elérhető hírek ebben az RSS feedben.</div>';
+                    return;
+                }
+
+                this.feedData.items.forEach((item, index) => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'rss-item';
+                    
+                    const pubDate = item.pubDate ? new Date(item.pubDate) : null;
+                    const timeAgo = pubDate ? this.formatTimeAgo(pubDate) : 'Ismeretlen idő';
+                    const itemLink = item.link || '#';
+                    
+                    itemElement.innerHTML = `
+                        <div class="rss-item-header">
+                            <h3 class="rss-item-title">
+                                <a href="${itemLink}" target="_blank" rel="noopener noreferrer" class="rss-item-link">
+                                    ${this.escapeHtml(item.title)}
+                                </a>
+                            </h3>
+                            <div class="rss-item-meta">
+                                <span class="rss-item-time">${timeAgo}</span>
+                                <span class="rss-item-source">${this.sourceName}</span>
+                                <span class="rss-item-category">${this.getCategoryName(this.sourceCategory)}</span>
+                            </div>
+                        </div>
+                        ${item.description ? `<p class="rss-item-description">${this.escapeHtml(this.truncateText(item.description, 300))}</p>` : ''}
+                        <div class="rss-item-actions">
+                            <a href="${itemLink}" target="_blank" rel="noopener noreferrer" class="read-more-btn">
+                                📖 Teljes cikk elolvasása
+                            </a>
+                        </div>
+                    `;
+                    
+                    itemsList.appendChild(itemElement);
+                });
+            }
+
+            async loadSidebarData() {
+                try {
+                    this.debugLog('Loading sidebar data for RSS viewer');
+                    
+                    const response = await fetch('/api/dashboard-data');
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.updateSidebarData(data);
+                        this.debugLog('Real dashboard data loaded');
+                    } else {
+                        throw new Error('Dashboard API not available');
+                    }
+                    
+                    const trendingResponse = await fetch('/api/trending?limit=5');
+                    if (trendingResponse.ok) {
+                        const trendingData = await trendingResponse.json();
+                        this.renderTrending(trendingData.trending);
+                        this.debugLog('Real trending data loaded');
+                    } else {
+                        throw new Error('Trending API not available');
+                    }
+                    
+                } catch (error) {
+                    console.error('Sidebar data betöltési hiba:', error);
+                    this.debugLog(`Sidebar load error: ${error.message} - Using MOCK data`);
+                    this.loadMockSidebarData();
+                }
+            }
+
+            loadMockSidebarData() {
+                this.debugLog('Loading mock sidebar data for RSS viewer');
+                
+                const mockData = {
+                    financial_rates: {
+                        currencies: [
+                            { pair: 'EUR/HUF', value: '389.45', change: '+1.2%', trend: 'up' },
+                            { pair: 'USD/HUF', value: '356.78', change: '-0.8%', trend: 'down' },
+                            { pair: 'CHF/HUF', value: '392.15', change: '+0.5%', trend: 'up' }
+                        ],
+                        crypto: [
+                            { pair: 'BTC/USD', value: '$43,250', change: '+2.5%', trend: 'up' },
+                            { pair: 'ETH/USD', value: '$2,680', change: '+1.8%', trend: 'up' }
+                        ]
+                    },
+                    weather: {
+                        temperature: '14',
+                        city: 'Budapest',
+                        icon: '🌤️'
+                    }
+                };
+                
+                this.updateSidebarData(mockData);
+                
+                this.renderTrending([
+                    { id: 'trend-1', title: 'Trending RSS hír: Gazdasági előrejelzések', engagement_score: 1250 },
+                    { id: 'trend-2', title: 'Trending RSS hír: Technológiai újítások', engagement_score: 980 },
+                    { id: 'trend-3', title: 'Trending RSS hír: Politikai fejlemények', engagement_score: 750 }
+                ]);
+            }
+
+            updateSidebarData(dashboardData) {
+                if (!dashboardData) return;
+                this.updateFinancialRates(dashboardData.financial_rates);
+                this.updateWeather(dashboardData.weather);
+            }
+
+            updateFinancialRates(financialData) {
+                const container = document.getElementById('financialRatesContent');
+                
+                if (!container || !financialData) {
+                    if (container) container.innerHTML = '<div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">💰 Árfolyam adatok nem elérhetőek</div>';
+                    return;
+                }
+
+                let html = '';
+
+                if (financialData.currencies && financialData.currencies.length > 0) {
+                    html += `<div class="rate-category"><h4>Deviza (HUF)</h4><ul class="rate-list">`;
+                    financialData.currencies.forEach(rate => {
+                        const trendClass = rate.trend === 'up' ? 'up' : 'down';
+                        const changeSign = rate.change.startsWith('+') || rate.change.startsWith('-') ? '' : (rate.trend === 'up' ? '+' : '-');
+                        html += `<li><span class="rate-pair">${rate.pair.replace('/HUF', '')}:</span><span class="rate-value">${rate.value}</span><span class="rate-change ${trendClass}">${changeSign}${rate.change}</span></li>`;
+                    });
+                    html += '</ul></div>';
+                }
+
+                if (financialData.crypto && financialData.crypto.length > 0) {
+                    html += `<div class="rate-category"><h4>Kripto / Nemesfém</h4><ul class="rate-list">`;
+                    financialData.crypto.forEach(rate => {
+                        const trendClass = rate.trend === 'up' ? 'up' : 'down';
+                        const changeSign = rate.change.startsWith('+') || rate.change.startsWith('-') ? '' : (rate.trend === 'up' ? '+' : '-');
+                        html += `<li><span class="rate-pair">${rate.pair}:</span><span class="rate-value">${rate.value}</span><span class="rate-change ${trendClass}">${changeSign}${rate.change}</span></li>`;
+                    });
+                    html += '</ul></div>';
+                }
+
+                html += '<p class="data-source-notice">Frissítve: ' + new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit'}) + '</p>';
+                container.innerHTML = html;
+            }
+
+            updateWeather(weatherData) {
+                const container = document.getElementById('weatherContent');
+                
+                if (!container || !weatherData) {
+                    if (container) container.innerHTML = `
+                        <a href="https://www.idojaras.hu/" target="_blank" rel="noopener noreferrer" class="weather-widget-link">
+                            <div class="weather-widget-content">
+                                <div class="weather-main">
+                                    <span class="weather-icon-placeholder">🌦️</span>
+                                    <span class="weather-temp-placeholder">N/A</span>
+                                </div>
+                                <p class="weather-location">Budapest</p>
+                                <span class="weather-details-link">Részletek &raquo;</span>
+                            </div>
+                        </a>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <a href="https://www.idojaras.hu/" target="_blank" rel="noopener noreferrer" class="weather-widget-link">
+                        <div class="weather-widget-content">
+                            <div class="weather-main">
+                                <span class="weather-icon-placeholder">${weatherData.icon || '🌦️'}</span>
+                                <span class="weather-temp-placeholder">${weatherData.temperature}°C</span>
+                            </div>
+                            <p class="weather-location">${weatherData.city || 'Budapest'}</p>
+                            <span class="weather-details-link">Részletek &raquo;</span>
+                        </div>
+                    </a>
+                `;
+            }
+
+            renderTrending(trending) {
+                const container = document.getElementById('trendingItems');
+                if (!container || !trending) {
+                    if (container) container.innerHTML = '<div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">📊 Trending adatok nem elérhetőek</div>';
+                    return;
+                }
+                
+                container.innerHTML = '';
+
+                trending.forEach(item => {
+                    const trendingItem = document.createElement('div');
+                    trendingItem.className = 'trending-item';
+                    trendingItem.onclick = () => {
+                        let url = `article-view.html?id=${item.id}`;
+                        if (this.debugMode) {
+                            url += '&debug=true';
+                        }
+                        window.location.href = url;
+                    };
+                    
+                    const engagementScore = this.formatNumber(item.engagement_score);
+                    
+                    trendingItem.innerHTML = `
+                        <span>${this.escapeHtml(this.truncateText(item.title, 60))}</span>
+                        <span>${engagementScore}</span>
+                    `;
+                    
+                    container.appendChild(trendingItem);
+                });
+            }
+
+            retry() {
+                this.debugLog('Retrying RSS feed load');
+                
+                const loadingContainer = document.getElementById('loadingContainer');
+                const errorContainer = document.getElementById('errorContainer');
+                const rssContainer = document.getElementById('rssContainer');
+                
+                if (loadingContainer) loadingContainer.style.display = 'flex';
+                if (errorContainer) errorContainer.style.display = 'none';
+                if (rssContainer) rssContainer.style.display = 'none';
+                
+                setTimeout(() => {
+                    this.loadRSSFeed();
+                }, 500);
+            }
+
+            showError(message) {
+                this.debugLog(`Showing error: ${message}`);
+                
+                const loadingContainer = document.getElementById('loadingContainer');
+                const rssContainer = document.getElementById('rssContainer');
+                const errorContainer = document.getElementById('errorContainer');
+                const errorMessage = document.getElementById('errorMessage');
+                
+                if (loadingContainer) loadingContainer.style.display = 'none';
+                if (rssContainer) rssContainer.style.display = 'none';
+                if (errorContainer) errorContainer.style.display = 'flex';
+                if (errorMessage) errorMessage.textContent = message;
+            }
+        }
+
+        // ===== GLOBAL INITIALIZATION =====
+        
+        // Initialize RSS Viewer when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧲 Starting RSS Viewer initialization...');
+            window.rssViewer = new RSSViewer();
+            
+            // Enhanced debug mode instructions
+            if (window.rssViewer.debugMode) {
+                console.log(`
+🧲 RSS VIEWER DEBUG MODE ACTIVATED! 🧲
+
+Debug features enabled:
+✅ RSS parameter verification alerts
+✅ Enhanced console logging
+✅ Debug info panel (top-right corner)
+✅ Mock data demonstration
+✅ Error handling verification
+
+How to use:
+- URL parameters are shown in alert dialog
+- Check console for detailed RSS processing logs
+- Debug panel shows real-time events
+- Mock data used when RSS fetch fails
+
+To disable debug mode, remove 'debug' from URL
+                `);
+            } else {
+                console.log(`
+🧲 RSS Viewer Loaded Successfully! 🧲
+
+To enable debug mode, add '&debug=true' to the URL
+Example: rss-feed.html?url=...&debug=true
+                `);
+            }
+        });
+
+        // Background animation (like main site)
+        let currentBg = 1;
+        setInterval(() => {
+            document.body.style.filter = currentBg === 1 ? 'hue-rotate(5deg)' : 'hue-rotate(0deg)';
+            currentBg = currentBg === 1 ? 2 : 1;
+        }, 15000);
+
+        console.log("🧲 RSS Viewer - Complete Standalone System Loaded");
+    </script>
+</body>
+</html>

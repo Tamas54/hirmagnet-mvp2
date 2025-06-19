@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 🧲 HERR CLAUS CACHE-KILLER HEADERS -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>Cikk - HírMagnet</title>
+    <link rel="stylesheet" href="/static/styles.css?v=202506161200">
+</head>
+<body>
+    <!-- Debug Information Panel -->
+    <div id="debugInfo" class="debug-info">
+        <div><strong>ARTICLE DEBUG</strong></div>
+        <div id="debugContent"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo-link" title="Vissza a HírMagnet főoldalára">
+                <div class="logo"><span class="logo-icon">🧲</span> HírMagnet</div>
+            </a>
+            <nav class="nav-tabs">
+                <button class="nav-tab" onclick="location.href='index.html'"><span class="nav-icon icon-all"></span>Összes</button>
+                <button class="nav-tab" data-category="general"><span class="nav-icon icon-general"></span>Közélet</button> 
+                <button class="nav-tab" data-category="foreign"><span class="nav-icon icon-foreign"></span>Külföld</button>
+                <button class="nav-tab" data-category="politics"><span class="nav-icon icon-politics"></span>Politika</button>
+                <button class="nav-tab" data-category="economy"><span class="nav-icon icon-economy"></span>Gazdaság</button>
+                <button class="nav-tab" data-category="tech"><span class="nav-icon icon-tech"></span>Tech</button>
+                <button class="nav-tab" data-category="entertainment"><span class="nav-icon icon-entertainment"></span>Bulvár</button>
+                <button class="nav-tab" data-category="sport"><span class="nav-icon icon-sport"></span>Sport</button>
+                <button class="nav-tab" data-category="cars"><span class="nav-icon icon-cars"></span>Autók</button>
+                <button class="nav-tab" data-category="lifestyle"><span class="nav-icon icon-lifestyle"></span>Életmód</button>
+            </nav>
+            <div class="user-section"><button class="premium-btn" title="Premium" onclick="showPremium()">✨</button></div>
+        </div>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loadingContainer" class="loading-container">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorContainer" class="error-container" style="display: none;">
+        <div class="error-message">
+            <h2>Hiba történt</h2>
+            <p id="errorMessage">A cikk betöltése sikertelen.</p>
+            <button onclick="location.href='index.html'" style="background: var(--accent-color); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 20px; cursor: pointer; margin-top: 1rem;">Vissza a főoldalra</button>
+        </div>
+    </div>
+
+    <!-- Article Content -->
+    <div id="articleContainer" class="article-page-container" style="display: none;">
+        <div class="article-layout-container">
+            <div class="article-content-main">
+                <div class="breadcrumbs">
+                    <a href="index.html">HírMagnet</a> &raquo; <span id="breadcrumbCategory">Kategória</span> &raquo; <span id="breadcrumbTitle">Cikk címe</span>
+                </div>
+
+                <h1 class="article-main-title" id="articleTitle">Cikk címe betöltés alatt...</h1>
+
+                <div class="article-meta-bar" id="articleMeta">
+                    <!-- Meta items will be populated dynamically -->
+                </div>
+
+                <div class="ad-slot-article-top">
+                    <img src="https://via.placeholder.com/728x90?text=Hirdetés+Cikk+Felett" alt="Hirdetés">
+                </div>
+
+                <img id="featuredImage" src="https://via.placeholder.com/800x400?text=Kiemelt+Kép" alt="Cikk kép" class="featured-article-image">
+
+                <div class="article-body-content">
+                    <p class="ai-processed-notice">ℹ️ Ez a hír a HírMagnet AI közreműködésével készült összefoglaló.</p>
+                    
+                    <div id="articleContent">
+                        <!-- Article content will be populated here -->
+                    </div>
+                    
+                    <div id="embeddedAudioPlayer" class="embedded-audio-player" style="display: none;">
+                        <h4>Hallgassa meg a cikket:</h4>
+                        <audio id="articleAudio" controls>
+                            <source src="" type="audio/mpeg">
+                            Böngészője nem támogatja az audio lejátszást.
+                        </audio>
+                        <div class="audio-controls">
+                            <label for="articleAudioSpeed">Sebesség:</label>
+                            <select id="articleAudioSpeed">
+                                <option value="0.75">0.75x</option>
+                                <option value="1" selected>1x</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2x</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="ad-slot-after-audio">
+                        <img src="https://via.placeholder.com/468x60?text=Hirdetés+Lejátszó+Után" alt="Hirdetés">
+                    </div>
+                </div>
+
+                <section class="ai-analytics-section" id="aiAnalytics" style="display: none;">
+                    <h4>AI Analitikai Betekintő</h4>
+                    <ul id="analyticsContent">
+                        <!-- Analytics will be populated here -->
+                    </ul>
+                </section>
+
+                <div class="original-article-button-container">
+                    <a id="originalArticleLink" href="#" target="_blank" rel="noopener noreferrer" class="original-article-button">
+                        🔗 Az Eredeti Cikk Teljes Terjedelmében
+                    </a>
+                </div>
+
+                <div class="ad-slot-article-bottom">
+                    <img src="https://via.placeholder.com/728x90?text=Hirdetés+a+cikk+alatt" alt="Hirdetés">
+                </div>
+
+                <section class="related-articles-section" id="relatedArticles" style="display: none;">
+                    <h3>Kapcsolódó AI Hírek</h3>
+                    <div class="related-articles-grid" id="relatedArticlesGrid">
+                        <!-- Related articles will be populated here -->
+                    </div>
+                </section>
+            </div>
+
+            <aside class="article-sidebar-column">
+                <div class="sidebar-section financial-rates-section">
+                    <h3 class="sidebar-title">Árfolyamok</h3>
+                    <div class="financial-rates-content">
+                        <div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">
+                            <div>💰 Árfolyam adatok betöltése...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section weather-sidebar-section">
+                    <h3 class="sidebar-title">Időjárás</h3>
+                    <a href="https://www.idojaras.hu/" target="_blank" rel="noopener noreferrer" class="weather-widget-link">
+                        <div class="weather-widget-content">
+                            <div class="weather-main">
+                                <span class="weather-icon-placeholder">🌤️</span>
+                                <span class="weather-temp-placeholder">Betöltés...</span>
+                            </div>
+                            <p class="weather-location">Budapest</p>
+                            <span class="weather-details-link">Részletek &raquo;</span>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section" id="trendingSidebar">
+                    <h3 class="sidebar-title">Trending</h3>
+                    <div id="trendingItems">
+                        <!-- Trending items will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="sidebar-section ad-slot-article-sidebar">
+                     <h3 class="sidebar-title" style="margin-bottom: 0.5rem; text-align:center; font-size:0.8rem; color:var(--text-muted-color);">Hirdetés</h3>
+                    <img src="https://via.placeholder.com/250x250?text=Oldalsáv+Reklám" alt="Hirdetés">
+                </div>
+
+            </aside>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>&copy; 2025 HírMagnet - Minden jog fenntartva.</p>
+        <p><a href="#">Kapcsolat</a> | <a href="#">Adatvédelmi Nyilatkozat</a> | <a href="#">Impresszum</a></p>
+    </footer>
+
+    <!-- ===== MODULÁRIS JAVASCRIPT FÁJLOK - CACHE BUSTER VERSIONING ===== -->
+    <script src="/static/js/utils.js?v=202506161200"></script>
+    <script src="/static/js/article-viewer.js?v=202506161200"></script>
+    <script src="/static/js/app.js?v=202506161200"></script>
+</body>
+</html>

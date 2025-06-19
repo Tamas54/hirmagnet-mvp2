@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 🧲 HERR CLAUS CACHE-KILLER HEADERS -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>HírMagnet - AI Magyar Hírportál</title>
+    <link rel="stylesheet" href="/static/styles.css?v=202506161200">
+</head>
+<body>
+    <!-- Debug Information Panel -->
+    <div id="debugInfo" class="debug-info">
+        <div>DEBUG MODE</div>
+        <div id="debugContent"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo-link" title="HírMagnet Főoldal">
+                <div class="logo">
+                    <span class="logo-icon">🧲</span>
+                    HírMagnet
+                </div>
+            </a>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-category="all"><span class="nav-icon icon-all"></span>Összes</button>
+                <button class="nav-tab" data-category="general"><span class="nav-icon icon-general"></span>Közélet</button>
+                <button class="nav-tab" data-category="foreign"><span class="nav-icon icon-foreign"></span>Külföld</button>
+                <button class="nav-tab" data-category="politics"><span class="nav-icon icon-politics"></span>Politika</button>
+                <button class="nav-tab" data-category="economy"><span class="nav-icon icon-economy"></span>Gazdaság</button>
+                <button class="nav-tab" data-category="tech"><span class="nav-icon icon-tech"></span>Tech</button>
+                <button class="nav-tab" data-category="entertainment"><span class="nav-icon icon-entertainment"></span>Bulvár</button>
+                <button class="nav-tab" data-category="sport"><span class="nav-icon icon-sport"></span>Sport</button>
+                <button class="nav-tab" data-category="cars"><span class="nav-icon icon-cars"></span>Autók</button>
+                <button class="nav-tab" data-category="lifestyle"><span class="nav-icon icon-lifestyle"></span>Életmód</button>
+            </nav>
+            <div class="user-section">
+                <button class="premium-btn" onclick="showPremium()" title="Premium">✨</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <section class="ai-news-section">
+            <div class="ai-content-grid">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2 class="section-title" id="sectionTitle">AI Feldolgozott Hírek</h2>
+                        <div>
+                            <span id="articleCount">Betöltés...</span> • <span id="lastUpdate">Frissítés...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="article-grid" id="articlesContainer">
+                        <!-- Articles will be loaded here dynamically -->
+                    </div>
+
+                    <button id="load-more-btn" class="load-more-btn" style="display: none;">
+                        További AI hírek betöltése
+                    </button>
+                </div>
+
+                <aside class="sidebar">
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Trending</h3>
+                        <div id="trendingList">
+                            <div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">
+                                <div>📊 Trending adatok betöltése...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section financial-rates-section">
+                        <h3 class="sidebar-title">Árfolyamok</h3>
+                        <div class="financial-rates-content" id="financialRatesContent">
+                            <div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">
+                                <div>💰 Árfolyam adatok betöltése...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section weather-sidebar-section">
+                        <h3 class="sidebar-title">Időjárás</h3>
+                        <div id="weatherContent">
+                            <div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">
+                                <div>🌤️ Időjárás adatok betöltése...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section ad-slot-sidebar">
+                        <h3 class="sidebar-title" style="margin-bottom: 0.5rem; text-align:center; font-size:0.8rem; color:var(--text-muted-color);">Hirdetés</h3>
+                        <div class="ad-placeholder-sidebar">
+                            <img src="https://via.placeholder.com/140x200?text=Reklám+140x200" alt="Hirdetés">
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Kövesd máshol is!</h3>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+                            <button style="padding: 0.6rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; background: var(--accent-color) ; color: white; transition: all 0.2s ease;" onclick="this.style.background='var(--accent-color-hover)'" onmouseout="this.style.background='var(--accent-color)'">🎵</button>
+                            <button style="padding: 0.6rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; background: var(--accent-color) ; color: white; transition: all 0.2s ease;" onclick="this.style.background='var(--accent-color-hover)'" onmouseout="this.style.background='var(--accent-color)'">📺</button>
+                            <button style="padding: 0.6rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; background: var(--accent-color) ; color: white; transition: all 0.2s ease;" onclick="this.style.background='var(--accent-color-hover)'" onmouseout="this.style.background='var(--accent-color)'">🐦</button>
+                        </div>
+                        <p style="color: var(--text-muted-color); font-size: 0.85rem; margin-top: 0.75rem;">
+                            Hallgasd meg a híreket Spotify-on, nézd YouTube-on, vagy kövesd Twitter-en!
+                        </p>
+                    </div>
+                </aside>
+            </div>
+        </section>
+        
+        <section class="current-news-section">
+            <h2 class="section-title">Aktuális Rövidhírek</h2>
+            <div class="current-articles-grid" id="currentArticlesGrid">
+                <!-- Short articles will be loaded here -->
+            </div>
+        </section>
+
+        <section class="ad-slot-content-banner">
+            <div class="ad-placeholder-banner">
+                <img src="https://via.placeholder.com/728x90?text=Hirdetés+728x90" alt="Hirdetés">
+            </div>
+        </section>
+
+        <section class="feeds-section" id="feedsSection">
+            <div class="feeds-header">
+                <h1 class="feeds-title">Eredeti Hírforrások</h1>
+                <p class="feeds-subtitle">Eredeti RSS feedek forrásokkal és kategóriákkal.</p>
+            </div>
+            <div class="filter-tabs">
+                 <button class="filter-tab active" data-category-filter="all">🌐 Összes</button>
+                 <button class="filter-tab" data-category-filter="general">👥 Közélet</button> 
+                 <button class="filter-tab" data-category-filter="foreign">🌍 Külföld</button> 
+                 <button class="filter-tab" data-category-filter="politics">🏛️ Politika</button>
+                 <button class="filter-tab" data-category-filter="economy">📈 Gazdaság</button>
+                 <button class="filter-tab" data-category-filter="tech">💻 Tech</button>
+                 <button class="filter-tab" data-category-filter="entertainment">👠 Bulvár</button>
+                 <button class="filter-tab" data-category-filter="sport">⚽ Sport</button>
+                 <button class="filter-tab" data-category-filter="cars">🚗 Autók</button>
+                 <button class="filter-tab" data-category-filter="lifestyle">✨ Életmód</button>
+            </div>
+            <div id="sourcesContainer">
+                <div style="text-align: center; color: var(--text-muted-color); padding: 2rem;">
+                    <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📡</div>
+                    <div>RSS források betöltése...</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <button class="scroll-to-feeds" onclick="scrollToFeeds()" title="Ugrás az eredeti feedekhez">📰</button>
+    <div style="position: fixed; bottom: 20px; right: 20px; z-index: 100;"><button id="globalAudioToggle">🔊 Hang BE</button></div>
+
+    <!-- Audio Modal -->
+    <div id="audioModal" style="display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+        <div style="background-color: var(--card-bg-color, white); margin: auto; padding: 20px; border-radius: 12px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--light-gray-border, #eee);">
+                <h3 id="audioTitle" style="font-size: 1.1rem; color: var(--text-primary-color, #212529); font-weight: 600;">Audio lejátszás</h3>
+                <button id="closeAudioModal" style="background: none; border: none; font-size: 1.8rem; cursor: pointer; padding: 0 5px; color: var(--text-muted-color, #6c757d); line-height: 1;">×</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <audio id="audioPlayer" controls style="width: 100%; border-radius: 8px;"><source src="" type="audio/mpeg">Böngésződ nem támogatja az audio lejátszást.</audio>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted-color, #6c757d);"><span id="audioSourceInfo">Forrás: N/A</span><span id="audioDuration">Időtartam: --:--</span></div>
+        </div>
+    </div>
+
+    <!-- Audio Speed Control -->
+    <div style="position: fixed; bottom: 75px; right: 20px; z-index: 100;">
+        <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.95); padding: 8px; border-radius: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+            <label style="font-size: 0.85rem; color: var(--text-secondary-color, #495057);">Sebesség:</label>
+            <select id="audioSpeed" style="background: transparent; border: 1px solid var(--light-gray-border, #ccc); border-radius: 15px; padding: 4px 7px; font-size: 0.85rem;">
+                <option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- ===== MODULÁRIS JAVASCRIPT FÁJLOK - CACHE BUSTER VERSIONING ===== -->
+    <script src="/static/js/utils.js?v=202506161200"></script>
+    <script src="/static/js/hirmagnet-main.js?v=202506161200"></script>
+    <script src="/static/js/app.js?v=202506161200"></script>
+</body>
+</html>

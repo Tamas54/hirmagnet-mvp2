@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS Feed - HírMagnet</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <!-- Debug Info Panel -->
+    <div id="debugInfo" style="display: none;">
+        <div class="debug-panel">
+            <h4>🐛 RSS Debug Info</h4>
+            <div id="debugContent"></div>
+        </div>
+    </div>
+
+    <!-- Header with Navigation -->
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo-link" title="Vissza a HírMagnet főoldalára">
+                <div class="logo"><span class="logo-icon">🧲</span> HírMagnet</div>
+            </a>
+            <nav class="nav-tabs">
+                <button class="nav-tab" onclick="location.href='index.html'"><span class="nav-icon icon-all"></span>Összes</button>
+                <button class="nav-tab" data-category="general"><span class="nav-icon icon-general"></span>Közélet</button> 
+                <button class="nav-tab" data-category="foreign"><span class="nav-icon icon-foreign"></span>Külföld</button>
+                <button class="nav-tab" data-category="politics"><span class="nav-icon icon-politics"></span>Politika</button>
+                <button class="nav-tab" data-category="economy"><span class="nav-icon icon-economy"></span>Gazdaság</button>
+                <button class="nav-tab" data-category="tech"><span class="nav-icon icon-tech"></span>Tech</button>
+                <button class="nav-tab" data-category="entertainment"><span class="nav-icon icon-entertainment"></span>Bulvár</button>
+                <button class="nav-tab" data-category="sport"><span class="nav-icon icon-sport"></span>Sport</button>
+                <button class="nav-tab" data-category="cars"><span class="nav-icon icon-cars"></span>Autók</button>
+                <button class="nav-tab" data-category="lifestyle"><span class="nav-icon icon-lifestyle"></span>Életmód</button>
+            </nav>
+            <div class="user-section"><button class="premium-btn" title="Premium" onclick="showPremium()">✨</button></div>
+        </div>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loadingContainer" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>RSS feed betöltése...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorContainer" class="error-container" style="display: none;">
+        <div class="error-content">
+            <h2>🚫 Hiba történt</h2>
+            <p id="errorMessage">Az RSS feed nem tölthető be</p>
+            <div class="error-actions">
+                <button onclick="window.rssViewer.retry()" class="retry-btn">🔄 Újra</button>
+                <a href="index.html" class="back-btn">🏠 Vissza a főoldalra</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- RSS Feed Content - SAME LAYOUT AS ARTICLE-VIEW -->
+    <div id="rssContainer" class="article-page-container" style="display: none;">
+        <div class="article-layout-container">
+            <!-- Main Content Area -->
+            <div class="article-content-main">
+                <!-- Breadcrumbs -->
+                <div class="breadcrumbs">
+                    <a href="index.html">HírMagnet</a> &raquo; <a href="index.html#feeds">RSS Források</a> &raquo; <span id="breadcrumbSource">RSS Feed</span>
+                </div>
+
+                <!-- RSS Header -->
+                <h1 id="rssTitle" class="article-main-title">RSS Feed</h1>
+
+                <!-- RSS Meta Bar (SAME STYLE AS ARTICLE META) -->
+                <div class="article-meta-bar" id="rssMetaBar">
+                    <span class="meta-item"><strong>Forrás:</strong> <a id="rssOriginalLink" href="#" target="_blank" rel="noopener noreferrer"><span id="rssUrl">URL betöltés...</span></a></span>
+                    <span class="meta-item"><strong>Kategória:</strong> <span id="rssCategory">Kategória</span></span>
+                    <span class="meta-item"><strong>Utolsó frissítés:</strong> <span id="rssUpdateTime">most</span></span>
+                    <span class="meta-item"><strong>Hírek száma:</strong> <span id="rssItemCount">0</span></span>
+                    <div class="article-share-buttons">
+                        <a href="index.html" class="back-btn" style="background: #e9ecef; border: none; color: var(--text-secondary-color); padding: 0.4rem 0.8rem; border-radius: 15px; font-size: 0.9rem; text-decoration: none;">← Vissza</a>
+                    </div>
+                </div>
+
+                <!-- RSS Description (if available) -->
+                <div id="rssDescription" class="ai-processed-notice" style="display: none;">
+                    <p id="rssDescriptionText"></p>
+                </div>
+
+                <!-- Ad Slot -->
+                <div class="ad-slot-article-top">
+                    <img src="https://via.placeholder.com/728x90?text=Hirdetés+RSS+Feed+Felett" alt="Hirdetés">
+                </div>
+
+                <!-- RSS Items Section -->
+                <div class="rss-items-section">
+                    <h2 class="section-title">📰 Hírek</h2>
+                    <div id="rssItemsList" class="rss-items-list">
+                        <!-- RSS items will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Ad Slot Bottom -->
+                <div class="ad-slot-article-bottom">
+                    <img src="https://via.placeholder.com/728x90?text=Hirdetés+RSS+Feed+Alatt" alt="Hirdetés">
+                </div>
+            </div>
+
+            <!-- Right Sidebar (SAME AS ARTICLE-VIEW) -->
+            <aside class="article-sidebar-column">
+                <!-- Financial Rates Widget -->
+                <div class="sidebar-section financial-rates-section">
+                    <h3 class="sidebar-title">Árfolyamok</h3>
+                    <div class="financial-rates-content">
+                        <div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">
+                            <div>💰 Árfolyam adatok betöltése...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weather Widget -->
+                <div class="sidebar-section weather-sidebar-section">
+                    <h3 class="sidebar-title">Időjárás</h3>
+                    <a href="https://www.idojaras.hu/" target="_blank" rel="noopener noreferrer" class="weather-widget-link">
+                        <div class="weather-widget-content">
+                            <div class="weather-main">
+                                <span class="weather-icon-placeholder">🌤️</span>
+                                <span class="weather-temp-placeholder">Betöltés...</span>
+                            </div>
+                            <p class="weather-location">Budapest</p>
+                            <span class="weather-details-link">Részletek &raquo;</span>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Trending Widget -->
+                <div class="sidebar-section" id="trendingSidebar">
+                    <h3 class="sidebar-title">Trending</h3>
+                    <div id="trendingItems">
+                        <div style="text-align: center; color: var(--text-muted-color); padding: 1rem;">
+                            <div>📊 Trending adatok betöltése...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ad Slot Sidebar -->
+                <div class="sidebar-section ad-slot-article-sidebar">
+                    <h3 class="sidebar-title" style="margin-bottom: 0.5rem; text-align:center; font-size:0.8rem; color:var(--text-muted-color);">Hirdetés</h3>
+                    <img src="https://via.placeholder.com/250x250?text=RSS+Oldalsáv+Reklám" alt="Hirdetés">
+                </div>
+            </aside>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 HírMagnet - Minden jog fenntartva.</p>
+        <p><a href="#">Kapcsolat</a> | <a href="#">Adatvédelmi Nyilatkozat</a> | <a href="#">Impresszum</a></p>
+    </footer>
+
+    <!-- Enhanced RSS Viewer CSS -->
+    <style>
+        /* RSS Items List Styling */
+        .rss-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .rss-item {
+            background: var(--card-bg-color);
+            border: 1px solid var(--light-gray-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: var(--card-shadow);
+        }
+
+        .rss-item:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--card-hover-shadow);
+            transform: translateY(-2px);
+        }
+
+        .rss-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-color);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .rss-item:hover::before {
+            opacity: 0.7;
+        }
+
+        /* RSS Item Header */
+        .rss-item-header {
+            margin-bottom: 0.75rem;
+        }
+
+        .rss-item-title {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .rss-item-link {
+            color: var(--text-primary-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .rss-item-link:hover {
+            color: var(--accent-color);
+        }
+
+        .rss-item-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted-color);
+            flex-wrap: wrap;
+        }
+
+        .rss-item-time {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .rss-item-source {
+            opacity: 0.8;
+        }
+
+        /* RSS Item Description */
+        .rss-item-description {
+            margin: 0.75rem 0;
+            color: var(--text-secondary-color);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* RSS Item Actions */
+        .rss-item-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--light-gray-border);
+        }
+
+        .read-more-btn {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .read-more-btn:hover {
+            background: var(--accent-color-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(var(--accent-color-rgb, 58, 123, 206), 0.25);
+        }
+
+        /* No Items State */
+        .no-items {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted-color);
+            font-size: 1.1rem;
+            background: var(--card-bg-color);
+            border-radius: 12px;
+            border: 1px solid var(--light-gray-border);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .rss-item {
+                padding: 1.25rem;
+            }
+            
+            .rss-item-title {
+                font-size: 1.1rem;
+            }
+            
+            .rss-item-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .rss-item-actions {
+                flex-direction: column;
+            }
+            
+            .read-more-btn {
+                text-align: center;
+                justify-content: center;
+            }
+        }
+    </style>
+
+    <!-- ===== MODULÁRIS JAVASCRIPT FÁJLOK ===== -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/rss-viewer.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
