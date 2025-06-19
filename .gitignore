@@ -1,0 +1,20 @@
+
+# SECURITY: Sensitive files
+.env
+.env.local
+.env.production
+
+# SECURITY: Database files
+data/*.db
+data/*.sqlite*
+*.db
+*.sqlite
+
+# SECURITY: Additional sensitive files
+config.json
+secrets.json
+api_keys.txt
+
+# SECURITY: Logs that might contain sensitive info
+logs/
+*.log
