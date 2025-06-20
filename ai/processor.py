@@ -440,7 +440,55 @@ class StrategicDualPhaseAIProcessor:
                 
         except Exception as e:
             print(f"   ⚠️ Emergency Gemini fallback also failed: {str(e)}")
-            # Absolute last resort - hardcoded Hungarian content
+            print(f"   🔄 Trying GPT-3.5 Turbo as absolute fallback...")
+            
+            # Try GPT-3.5 Turbo as absolute fallback
+            try:
+                gpt35_prompt = f"""
+                Írj egy 400-600 szavas informatív cikket magyarul:
+                
+                Cím: {article.original_title}
+                Forrás: {article.source}
+                Tartalom: {clean_content}
+                
+                KRITIKUS KÖVETELMÉNYEK:
+                - MINIMUM 400-600 szavas cikk MAGYARUL
+                - KÖTELEZŐ MAGYAR NYELV - forrás nyelvétől függetlenül
+                - Informatív újságírói stílus
+                - Minden eredeti tény megtartása
+                
+                JSON válasz:
+                {{
+                    "article_body": "minimum 400-600 szavas magyar cikk...",
+                    "title": "optimalizált magyar cím",
+                    "sentiment": "neutral",
+                    "keywords": "magyar kulcsszó1, kulcsszó2, kulcsszó3"
+                }}
+                """
+                
+                gpt35_response = self.openai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "Te egy tapasztalt magyar újságíró vagy. Minden cikket magyarul írj!"},
+                        {"role": "user", "content": gpt35_prompt}
+                    ],
+                    max_tokens=2000,
+                    temperature=0.3
+                )
+                
+                gpt35_result_text = gpt35_response.choices[0].message.content.strip()
+                gpt35_result = self._robust_json_parse(gpt35_result_text)
+                
+                if gpt35_result.get('article_body') and len(gpt35_result['article_body']) > 200:
+                    print(f"   ✅ GPT-3.5 Turbo absolute fallback successful!")
+                    return gpt35_result
+                else:
+                    raise Exception("GPT-3.5 response too short")
+                    
+            except Exception as gpt_error:
+                print(f"   ❌ GPT-3.5 Turbo absolute fallback also failed: {str(gpt_error)}")
+            
+            # Ultimate last resort - hardcoded Hungarian content
             base_content = f"""
             {article.original_title}
 
