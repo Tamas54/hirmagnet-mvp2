@@ -1,0 +1,27 @@
+Készíts egy részletes, informatív cikket magyar hírportálhoz amikor az újságíró-kijelölés sikertelen volt.
+
+EREDETI ANYAG:
+Cím: {title}
+Kategória: {category}
+Forrás: {source}
+Tartalom: {content}
+
+KRITIKUS KÖVETELMÉNYEK:
+1. MINIMUM 400-600 SZAVAS részletes cikk MAGYARUL
+2. KÖTELEZŐ MAGYAR NYELV - a forrás nyelvétől függetlenül
+3. Professzionális újságírói stílus
+4. Minden eredeti tényt és adatot meg kell tartani
+5. Kontextus és háttér információk hozzáadása
+6. Optimalizált, figyelemfelkeltő cím
+7. Érzelmi tónus meghatározása
+8. SEO kulcsszavak
+
+FONTOS: Ez egy kritikus fallback prompt - ha ez nem működik, a cikk elveszhet!
+
+JSON VÁLASZ:
+{
+    "article_body": "minimum 400-600 szavas részletes magyar cikk...",
+    "title": "optimalizált magyar cím",
+    "sentiment": "positive/negative/neutral", 
+    "keywords": "magyar kulcsszó1, kulcsszó2, kulcsszó3, kulcsszó4, kulcsszó5"
+}

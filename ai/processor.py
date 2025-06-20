@@ -368,28 +368,102 @@ class StrategicDualPhaseAIProcessor:
             return self._generate_fallback_content(article)
 
     def _generate_fallback_content(self, article: Article) -> Dict[str, Any]:
-        """Végső fallback tartalom generálás."""
+        """AI-alapú fallback tartalom generálás minimum 400-600 szóval magyar nyelven."""
         clean_content = self._clean_content(article.original_content or "")
         
-        fallback_content = f"""
-        {article.original_title}
-
-        A legfrissebb információk szerint fontos fejlemények történtek, amelyek figyelmet érdemelnek.
-
-        {clean_content[:400] if clean_content else 'A részletek jelenleg tisztázás alatt állnak.'}
-
-        További részletek hamarosan várhatók. A helyzet alakulását folyamatosan figyelemmel kísérjük.
-
+        # Load fallback prompt
+        fallback_prompt_path = "ai/prompts/processing/fallback_content_generation.txt"
+        try:
+            with open(fallback_prompt_path, 'r', encoding='utf-8') as f:
+                prompt_template = f.read()
+            
+            prompt = prompt_template.format(
+                title=article.original_title,
+                category=getattr(article, 'category', 'general'),
+                source=article.source,
+                content=clean_content
+            )
+            
+            # Generate with Gemini (fallback should use fastest model)
+            response = self.gemini_model.generate_content(prompt)
+            result_text = response.text.strip()
+            
+            result = self._robust_json_parse(result_text)
+            
+            # Ensure required fields
+            if not result.get('article_body'):
+                result['article_body'] = self._create_emergency_fallback(article, clean_content)
+            if not result.get('title'):
+                result['title'] = article.original_title
+            if not result.get('sentiment'):
+                result['sentiment'] = 'neutral'
+            if not result.get('keywords'):
+                result['keywords'] = f"{article.source}, hírek, {getattr(article, 'category', 'general')}"
+            
+            return result
+            
+        except Exception as e:
+            print(f"   ⚠️ AI fallback failed, using emergency fallback: {str(e)}")
+            return self._create_emergency_fallback(article, clean_content)
+    
+    def _create_emergency_fallback(self, article: Article, clean_content: str) -> Dict[str, Any]:
+        """Végső vészhelyzeti fallback - Gemini 2.5-tel próbálkozik egyszerű prompttal."""
+        
+        # Try one more time with Gemini and very simple prompt
+        simple_prompt = f"""
+        Írj egy 400-600 szavas magyar cikket:
+        
+        Cím: {article.original_title}
         Forrás: {article.source}
+        Tartalom: {clean_content}
+        
+        KRITIKUS: Csak magyar nyelven írj! Minimum 400 szó!
+        
+        JSON válasz:
+        {{
+            "article_body": "400-600 szavas magyar cikk...",
+            "title": "magyar cím",
+            "sentiment": "neutral",
+            "keywords": "kulcsszó1, kulcsszó2"
+        }}
         """
         
-        return {
-            'summary': fallback_content.strip(),
-            'article_body': fallback_content.strip(),
-            'title': article.original_title,
-            'sentiment': 'neutral',
-            'keywords': f"{article.source}, hírek, {getattr(article, 'category', 'general')}"
-        }
+        try:
+            response = self.gemini_model.generate_content(simple_prompt)
+            result_text = response.text.strip()
+            result = self._robust_json_parse(result_text)
+            
+            if result.get('article_body') and len(result['article_body']) > 200:
+                return result
+            else:
+                raise Exception("Gemini response too short")
+                
+        except Exception as e:
+            print(f"   ⚠️ Emergency Gemini fallback also failed: {str(e)}")
+            # Absolute last resort - hardcoded Hungarian content
+            base_content = f"""
+            {article.original_title}
+
+            A HírMagnet szerkesztősége szerint fontos fejlemények történtek, amelyek figyelmet érdemelnek a magyar olvasók körében.
+
+            {clean_content[:800] if clean_content else 'A részletek jelenleg tisztázás alatt állnak, de a szerkesztőségünk folyamatosan követi az eseményeket.'}
+
+            Az üggyel kapcsolatos további információk várhatóan hamarosan napvilágot látnak. A helyzet alakulását szerkesztőségünk folyamatosan figyelemmel kísérje, és minden fontos fejleményről beszámolunk olvasóinknak.
+
+            A történtek jelentősége nem elhanyagolható, és várhatóan további reakciókat válthat ki a szakmai és társadalmi körökben egyaránt. A témával kapcsolatos elemzések és szakértői vélemények a következő napokban kerülhetnek nyilvánosságra.
+
+            Forrás: {article.source}
+            
+            További frissítések és részletes beszámolók hamarosan követik a HírMagnet oldalán.
+            """
+            
+            return {
+                'summary': base_content.strip(),
+                'article_body': base_content.strip(),
+                'title': article.original_title,
+                'sentiment': 'neutral',
+                'keywords': f"{article.source}, hírek, {getattr(article, 'category', 'general')}, magyarország"
+            }
 
     def _robust_json_parse(self, text: str) -> Dict[str, Any]:
         """Robusztus JSON-értelmező a modellek válaszaihoz."""
@@ -515,18 +589,20 @@ class StrategicDualPhaseAIProcessor:
             Forrás: {article.source}
             Tartalom: {clean_content}
 
-            KÖVETELMÉNYEK:
-            - 800-1200 szavas részletes cikk
+            KRITIKUS KÖVETELMÉNYEK:
+            - MINIMUM 800-1200 szavas részletes cikk MAGYARUL
+            - KÖTELEZŐ MAGYAR NYELV - forrás nyelvétől függetlenül
             - Professzionális újságírói stílus
             - Kontextus és háttér információk
-            - Optimalizált cím
+            - Minden eredeti tény megtartása
+            - Optimalizált magyar cím
 
             JSON válasz:
             {{
-                "article_body": "800-1200 szavas részletes cikk...",
-                "title": "optimalizált cím",
+                "article_body": "minimum 800-1200 szavas részletes MAGYAR cikk...",
+                "title": "optimalizált magyar cím",
                 "sentiment": "positive/negative/neutral",
-                "keywords": "kulcsszó1, kulcsszó2, kulcsszó3"
+                "keywords": "magyar kulcsszó1, kulcsszó2, kulcsszó3, kulcsszó4"
             }}
             """
         else:
@@ -538,17 +614,19 @@ class StrategicDualPhaseAIProcessor:
             Forrás: {article.source}
             Tartalom: {clean_content}
 
-            KÖVETELMÉNYEK:
-            - 600-800 szavas informatív cikk
-            - Közérthető magyar nyelv
-            - Lényegi információk
+            KRITIKUS KÖVETELMÉNYEK:
+            - MINIMUM 600-800 szavas informatív cikk MAGYARUL
+            - KÖTELEZŐ MAGYAR NYELV - forrás nyelvétől függetlenül
+            - Közérthető magyar újságírói stílus
+            - Minden eredeti tény és adat megtartása
+            - Lényegi információk + kontextus
 
             JSON válasz:
             {{
-                "article_body": "600-800 szavas cikk...",
-                "title": "optimalizált cím",
+                "article_body": "minimum 600-800 szavas MAGYAR cikk...",
+                "title": "optimalizált magyar cím",
                 "sentiment": "positive/negative/neutral",
-                "keywords": "kulcsszó1, kulcsszó2, kulcsszó3"
+                "keywords": "magyar kulcsszó1, kulcsszó2, kulcsszó3, kulcsszó4"
             }}
             """
 
