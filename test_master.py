@@ -18,8 +18,35 @@ from config.sources import NEWS_SOURCES
 
 # === TESZT KONFIGURÁCIÓ ===
 QUICK_MODE_SOURCES = [
-    'Telex', 'HVG', 'Index', '24.hu', 'Válasz Online', 'G7', 
-    'The Economist - Finance', 'Reuters World News', 'Bellingcat', 'TechCrunch'
+    # MAGYAR PRÉMIUM
+    'Telex', 'HVG', 'Index', '24.hu', 'Válasz Online', 'G7', 'Portfolio',
+    
+    # MAGYAR STANDARD  
+    '444.hu', 'Magyar Nemzet', 'Maszol',
+    
+    # BBC CSALÁD
+    'BBC News UK', 'BBC News World', 'BBC Business', 'BBC Technology',
+    
+    # GUARDIAN CSALÁD  
+    'The Guardian World', 'The Guardian UK', 'The Guardian Technology',
+    
+    # CNN CSALÁD
+    'CNN Latest', 'CNN World', 'CNN Technology',
+    
+    # GAZDASÁGI PRÉMIUM
+    'The Economist - Finance', 'The Economist - Business', 'Bloomberg Markets',
+    
+    # TECH PRÉMIUM
+    'TechCrunch', 'TechCrunch Startups', 'The Verge', 'WIRED Business',
+    
+    # OKNYOMOZÓ PRÉMIUM
+    'Bellingcat', 'The Intercept', 'ProPublica', 'OCCRP',
+    
+    # TOVÁBBI NEMZETKÖZI
+    'Fox News', 'Politico EU', 'AP News Top Stories', 'Sky News Home',
+    
+    # NÉMET FORRÁSOK
+    'FAZ', 'Tagesspiegel', 'NZZ'
 ]
 ARTICLE_FETCH_LIMIT_QUICK = 5
 ARTICLE_FETCH_LIMIT_COMPLETE = 10
