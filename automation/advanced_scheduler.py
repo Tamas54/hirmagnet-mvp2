@@ -157,15 +157,15 @@ class AdvancedAutomationScheduler:
         
         # 1. Hírgyűjtés
         self.run_news_scraping()
-        time.sleep(30)
+        time.sleep(2)
         
         # 2. AI feldolgozás
         self.run_ai_processing()
-        time.sleep(30)
+        time.sleep(2)  # Reduced coordination pause
         
         # 3. TTS generálás
         self.run_tts_generation()
-        time.sleep(30)
+        time.sleep(2)  # Reduced coordination pause
         
         # 4. Social media (ha van új tartalom)
         self.run_social_media_publishing()

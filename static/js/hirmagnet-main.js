@@ -92,7 +92,7 @@ class HirMagnet {
                 this.debugLog('Cannot check processing status - assuming normal operation');
                 this.isServerProcessing = false;
             }
-        }, 10000); // Check every 10 seconds
+        }, 15000); // Check every 15 seconds (reduced frequency)
     }
 
     // 🎖️ HERR CLAUS ROBUST INITIAL DATA LOADING - NO MOCK FALLBACK DURING PROCESSING
@@ -196,7 +196,7 @@ class HirMagnet {
             this.debugLog(`Fetching: ${url} (retry: ${retryCount})`);
             
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
             const response = await fetch(url, {
                 signal: controller.signal,
@@ -1168,7 +1168,7 @@ class HirMagnet {
                     this.renderTrendingSmooth();
                 }
             }
-        }, 5 * 60 * 1000);
+        }, 10 * 60 * 1000); // Reduced from 5min to 10min
 
         // Update dashboard data every 10 minutes (only if not processing)
         setInterval(async () => {

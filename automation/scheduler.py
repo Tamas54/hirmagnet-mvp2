@@ -61,11 +61,11 @@ class AutomationScheduler:
         
         # 1. Hírgyűjtés
         self.run_news_scraping()
-        time.sleep(30)  # 30 sec szünet
+        time.sleep(2)  # 30 sec szünet
         
         # 2. AI feldolgozás
         self.run_ai_processing()
-        time.sleep(30)  # 30 sec szünet
+        time.sleep(2)  # Reduced coordination pause
         
         # 3. TTS generálás
         self.run_tts_generation()

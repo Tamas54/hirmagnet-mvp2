@@ -13,8 +13,51 @@ import json
 import os
 import asyncio
 import threading
+import time
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import wraps
+
+# Performance logging setup
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def log_performance(func):
+    """Performance logging decorator for critical endpoints"""
+    @wraps(func)
+    async def async_wrapper(*args, **kwargs):
+        start_time = time.time()
+        try:
+            result = await func(*args, **kwargs)
+            duration = time.time() - start_time
+            if duration > 5.0:  # Log slow operations
+                logger.warning(f"🐌 SLOW: {func.__name__} took {duration:.2f}s")
+            elif duration > 2.0:
+                logger.info(f"⚠️ {func.__name__} took {duration:.2f}s")
+            return result
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(f"❌ {func.__name__} failed after {duration:.2f}s: {e}")
+            raise
+    
+    @wraps(func)
+    def sync_wrapper(*args, **kwargs):
+        start_time = time.time()
+        try:
+            result = func(*args, **kwargs)
+            duration = time.time() - start_time
+            if duration > 5.0:
+                logger.warning(f"🐌 SLOW: {func.__name__} took {duration:.2f}s")
+            elif duration > 2.0:
+                logger.info(f"⚠️ {func.__name__} took {duration:.2f}s")
+            return result
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(f"❌ {func.__name__} failed after {duration:.2f}s: {e}")
+            raise
+    
+    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
 # Pydantic models
 from pydantic import BaseModel
@@ -479,9 +522,8 @@ class BackgroundProcessor:
                 print(f"🧲 Background processing #{self.process_count} started")
                 self.last_process_time = datetime.now()
                 
-                # Simulate heavy processing
-                import time
-                time.sleep(30)  # Simulate 30 seconds of processing
+                # Background processing completed immediately
+                print("✅ Background processing completed immediately")
                 
                 print(f"✅ Background processing #{self.process_count} completed")
                 
@@ -507,6 +549,7 @@ def verify_admin_access():
 # ===== HERR CLAUS NON-BLOCKING API ENDPOINTS =====
 
 @router.get("/articles")
+@log_performance
 async def get_articles(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -607,10 +650,11 @@ async def get_articles(
         )
 
 @router.get("/articles/{article_id}")
+@log_performance
 async def get_article(article_id: int, db: Session = Depends(get_db)):
     """🎖️ HERR CLAUS NON-BLOCKING Article detail with timeout protection"""
     try:
-        db.execute(text("PRAGMA busy_timeout = 2000"))  # 2 second timeout
+        db.execute(text("PRAGMA busy_timeout = 15000"))  # 15s timeout  # 2 second timeout
         
         article = db.query(Article).filter(Article.id == article_id).first()
         
@@ -651,6 +695,7 @@ async def get_article(article_id: int, db: Session = Depends(get_db)):
         )
 
 @router.get("/trending")
+@log_performance
 async def get_trending_articles(
     hours: int = Query(24, ge=1, le=168),
     limit: int = Query(10, ge=1, le=50),
@@ -1633,6 +1678,45 @@ async def get_ai_providers():
 
 # ===== STARTUP MESSAGE =====
 print("🎖️ HERR CLAUS NON-BLOCKING BACKEND - READY FOR DEPLOYMENT!")
+# Health check endpoint
+@router.get("/health")
+@log_performance
+async def health_check():
+    """🎖️ HERR CLAUS System health check endpoint"""
+    try:
+        # Check database connection
+        db = next(get_db())
+        try:
+            db.execute(text("SELECT 1"))
+            db_status = "connected"
+        except Exception:
+            db_status = "error"
+        finally:
+            db.close()
+        
+        # Check processing state
+        is_processing = processing_state.is_processing
+        last_process = processing_state.last_process_time.isoformat() if processing_state.last_process_time else None
+        
+        return {
+            "status": "healthy" if db_status == "connected" else "degraded",
+            "timestamp": datetime.now().isoformat(),
+            "database": db_status,
+            "processing": {
+                "is_active": is_processing,
+                "last_process": last_process,
+                "process_count": processing_state.process_count
+            },
+            "version": "1.0.0"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e)
+        }
+
 print("🧲 Deutsche Präzision Features:")
 print("   ✅ Non-blocking API endpoints with timeout protection") 
 print("   ✅ Background processing with ThreadPoolExecutor")
