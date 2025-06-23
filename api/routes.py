@@ -561,7 +561,7 @@ async def get_articles(
     """🎖️ HERR CLAUS NON-BLOCKING Articles endpoint with timeout protection"""
     try:
         # CRITICAL: Database timeout protection
-        db.execute(text("PRAGMA busy_timeout = 3000"))  # 3 second timeout
+        db.execute(text("PRAGMA busy_timeout = 10000"))  # 10 second timeout
         
         query = db.query(Article).filter(Article.is_processed == True)
         
@@ -703,7 +703,7 @@ async def get_trending_articles(
 ):
     """🎖️ HERR CLAUS NON-BLOCKING Trending with timeout protection"""
     try:
-        db.execute(text("PRAGMA busy_timeout = 2000"))
+        db.execute(text("PRAGMA busy_timeout = 10000"))  # 10 second timeout
         
         since = datetime.now() - timedelta(hours=hours)
         
@@ -749,7 +749,7 @@ async def get_latest_articles(
 ):
     """🎖️ HERR CLAUS NON-BLOCKING Latest articles with timeout protection"""
     try:
-        db.execute(text("PRAGMA busy_timeout = 2000"))
+        db.execute(text("PRAGMA busy_timeout = 10000"))  # 10 second timeout
         
         query = db.query(Article).filter(Article.is_processed == True)
         

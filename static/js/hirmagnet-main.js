@@ -28,7 +28,7 @@ class HirMagnet {
         
         // 🧲 HERR CLAUS AUTO-REFRESH TIMER (ENHANCED)
         this.autoRefreshTimer = null;
-        this.autoRefreshInterval = 30000; // 30 Sekunden
+        this.autoRefreshInterval = 15000; // 15 seconds - Much faster response
         
         this.init();
     }
@@ -196,7 +196,7 @@ class HirMagnet {
             this.debugLog(`Fetching: ${url} (retry: ${retryCount})`);
             
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
             
             const response = await fetch(url, {
                 signal: controller.signal,
@@ -236,7 +236,7 @@ class HirMagnet {
             
             // 🎖️ HERR CLAUS: Intelligent retry logic with exponential backoff
             if (retryCount < this.maxRetries && !error.message.includes('processing')) {
-                const delay = Math.pow(2, retryCount) * 2000; // 2s, 4s, 8s
+                const delay = Math.pow(2, retryCount) * 500; // 0.5s, 1s, 2s - Much faster
                 this.debugLog(`Retrying in ${delay}ms...`);
                 
                 await new Promise(resolve => setTimeout(resolve, delay));
@@ -252,7 +252,7 @@ class HirMagnet {
     async loadTrendingRobust(retryCount = 0) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
             
             const response = await fetch('/api/trending?limit=10', {
                 signal: controller.signal,
@@ -278,7 +278,7 @@ class HirMagnet {
             console.warn('Trending loading error:', error);
             
             if (retryCount < 2 && !error.message.includes('processing')) {
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Faster retry
                 return this.loadTrendingRobust(retryCount + 1);
             }
             
@@ -290,7 +290,7 @@ class HirMagnet {
     async loadDashboardDataRobust(retryCount = 0) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
             
             const response = await fetch('/api/dashboard-data', {
                 signal: controller.signal,
@@ -311,7 +311,7 @@ class HirMagnet {
             console.warn('Dashboard loading error:', error);
             
             if (retryCount < 2) {
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Faster retry
                 return this.loadDashboardDataRobust(retryCount + 1);
             }
             
@@ -323,7 +323,7 @@ class HirMagnet {
     async loadCurrentNewsRobust() {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
             
             const response = await fetch('/api/latest?limit=6', {
                 signal: controller.signal,
