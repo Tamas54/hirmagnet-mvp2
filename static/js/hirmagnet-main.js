@@ -62,37 +62,42 @@ class HirMagnet {
     }
 
     // 🎖️ HERR CLAUS PROCESSING STATUS MONITORING
+    // 4. BACKEND PROCESSING CHECK OPTIMALIZÁCIÓ
     startProcessingMonitoring() {
-        console.log('🎖️ Processing monitoring started...');
+        console.log('🎖️ Processing monitoring started with enhanced timeout...');
         
         this.processingCheckInterval = setInterval(async () => {
             try {
+                const controller = new AbortController();
+                setTimeout(() => controller.abort(), 3000); // Csak 3 másodperc a processing check-re
+                
                 const response = await fetch('/api/processing-status', {
-                    timeout: 3000,
+                    signal: controller.signal,
                     headers: { 'Cache-Control': 'no-cache' }
                 });
                 
                 if (response.ok) {
-                    const status = await response.json();
+                    const data = await response.json();
                     const wasProcessing = this.isServerProcessing;
-                    this.isServerProcessing = status.is_processing || false;
+                    this.isServerProcessing = data.is_processing || false;
                     
-                    if (this.isServerProcessing && !wasProcessing) {
-                        this.debugLog('Server processing started - switching to cached data mode');
-                        this.showProcessingIndicator();
-                    } else if (!this.isServerProcessing && wasProcessing) {
-                        this.debugLog('Server processing finished - switching to real data mode');
+                    if (wasProcessing && !this.isServerProcessing) {
+                        console.log('🎖️ Server processing completed - resuming operations');
                         this.hideProcessingIndicator();
-                        // Trigger immediate refresh when processing finishes
-                        setTimeout(() => this.loadInitialDataRobust(), 2000);
+                    } else if (this.isServerProcessing && !wasProcessing) {
+                        console.log('🎖️ Server processing started - holding operations');
+                        this.showProcessingIndicator();
                     }
                 }
             } catch (error) {
-                // If we can't check status, assume normal operation
-                this.debugLog('Cannot check processing status - assuming normal operation');
-                this.isServerProcessing = false;
+                // Ha a processing check nem megy, feltételezzük hogy nincs processing
+                if (this.isServerProcessing) {
+                    console.log('🎖️ Processing check failed - assuming server available');
+                    this.isServerProcessing = false;
+                    this.hideProcessingIndicator();
+                }
             }
-        }, 15000); // Check every 15 seconds (reduced frequency)
+        }, 5000); // Checking every 5 seconds instead of constantly
     }
 
     // 🎖️ HERR CLAUS ROBUST INITIAL DATA LOADING - NO MOCK FALLBACK DURING PROCESSING
@@ -181,7 +186,7 @@ class HirMagnet {
     }
 
     // 🎖️ HERR CLAUS ROBUST ARTICLES LOADING WITH RETRY AND PROCESSING AWARENESS
-    async loadArticlesRobust(category = 'all', offset = 0, limit = 20, retryCount = 0) {
+    async loadArticlesRobust(category = 'all', offset = 0, limit = 20, signal = null, retryCount = 0) {
         try {
             const params = new URLSearchParams({
                 limit: limit.toString(),
@@ -195,18 +200,20 @@ class HirMagnet {
             const url = `/api/articles?${params}`;
             this.debugLog(`Fetching: ${url} (retry: ${retryCount})`);
             
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-            
-            const response = await fetch(url, {
-                signal: controller.signal,
+            // Add abort signal to fetch
+            const fetchOptions = {
+                method: 'GET',
                 headers: {
-                    'Cache-Control': 'no-cache',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
                 }
-            });
+            };
             
-            clearTimeout(timeoutId);
+            if (signal) {
+                fetchOptions.signal = signal;
+            }
+            
+            const response = await fetch(url, fetchOptions);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -214,16 +221,10 @@ class HirMagnet {
 
             const data = await response.json();
             
-            // 🎖️ HERR CLAUS: Check if server indicates processing
-            if (data.processing_status === 'processing') {
-                this.debugLog('Server reports processing status - will use cached data');
-                this.isServerProcessing = true;
-                throw new Error('Server is processing - use cached data');
-            }
-            
-            // Check for valid article data
-            if (!data.articles || data.articles.length === 0) {
-                throw new Error('No articles received - possibly processing');
+            // Cache good data
+            if (data.articles && data.articles.length > 0) {
+                this.lastGoodData.articles = data.articles;
+                this.lastGoodData.timestamp = new Date();
             }
             
             this.debugLog(`API Response: ${data.articles.length} articles, total: ${data.total}`);
@@ -231,35 +232,42 @@ class HirMagnet {
             return { success: true, data };
 
         } catch (error) {
-            console.warn('Articles loading error:', error);
-            this.debugLog(`Load articles error: ${error.message}`);
-            
-            // 🎖️ HERR CLAUS: Intelligent retry logic with exponential backoff
-            if (retryCount < this.maxRetries && !error.message.includes('processing')) {
-                const delay = Math.pow(2, retryCount) * 500; // 0.5s, 1s, 2s - Much faster
-                this.debugLog(`Retrying in ${delay}ms...`);
-                
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return this.loadArticlesRobust(category, offset, limit, retryCount + 1);
+            if (error.name === 'AbortError') {
+                console.log('🎖️ Request aborted by timeout');
+                return { success: false, error: 'timeout' };
             }
             
-            // Failed after retries
-            return { success: false, error: error.message };
+            console.warn('🎖️ Articles load failed, using cache if available:', error);
+            
+            // Return cached data if available
+            if (this.lastGoodData.articles.length > 0) {
+                return {
+                    success: true,
+                    data: {
+                        articles: this.lastGoodData.articles,
+                        total: this.lastGoodData.articles.length,
+                        has_more: false
+                    },
+                    cached: true
+                };
+            }
+            
+            throw error;
         }
     }
 
     // 🎖️ HERR CLAUS ROBUST TRENDING LOADING
-    async loadTrendingRobust(retryCount = 0) {
+    async loadTrendingRobust(signal = null, retryCount = 0) {
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-            
-            const response = await fetch('/api/trending?limit=10', {
-                signal: controller.signal,
+            const fetchOptions = {
                 headers: { 'Cache-Control': 'no-cache' }
-            });
+            };
             
-            clearTimeout(timeoutId);
+            if (signal) {
+                fetchOptions.signal = signal;
+            }
+            
+            const response = await fetch('/api/trending?limit=10', fetchOptions);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -287,17 +295,17 @@ class HirMagnet {
     }
 
     // 🎖️ HERR CLAUS ROBUST DASHBOARD LOADING  
-    async loadDashboardDataRobust(retryCount = 0) {
+    async loadDashboardDataRobust(signal = null, retryCount = 0) {
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-            
-            const response = await fetch('/api/dashboard-data', {
-                signal: controller.signal,
+            const fetchOptions = {
                 headers: { 'Cache-Control': 'no-cache' }
-            });
+            };
             
-            clearTimeout(timeoutId);
+            if (signal) {
+                fetchOptions.signal = signal;
+            }
+            
+            const response = await fetch('/api/dashboard-data', fetchOptions);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -351,8 +359,11 @@ class HirMagnet {
     }
 
     // 🎖️ HERR CLAUS ROBUST AUTO-REFRESH - PROCESSING AWARE
+    // ===== TIMER OPTIMALIZÁCIÓ - HERR CLAUS PRECISION ENGINEERING =====
+    
+    // 1. AUTOREFRESH TIMEOUT CSÖKKENTÉSE
     startAutoRefreshRobust() {
-        console.log('🎖️ Robust auto-refresh aktiviert - Deutsche Präzision!');
+        console.log('🎖️ Starting auto-refresh with TIMEOUT PROTECTION...');
         
         this.autoRefreshTimer = setInterval(async () => {
             if (this.isLoading) {
@@ -374,8 +385,16 @@ class HirMagnet {
                 
                 this.updateRefreshTimestamp('checking...');
                 
-                // Use robust loading
-                await this.loadInitialDataRobust();
+                // 🎖️ TIMEOUT PROTECTION - Maximum 10 seconds
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Auto-refresh timeout')), 10000)
+                );
+                
+                // Use Promise.race for timeout protection
+                await Promise.race([
+                    this.loadInitialDataRobustWithTimeout(),
+                    timeoutPromise
+                ]);
                 
                 console.log('✅ Robust auto-refresh successful');
                 this.debugLog('Robust auto-refresh completed successfully');
@@ -385,8 +404,44 @@ class HirMagnet {
                 console.warn('❌ Robust auto-refresh warning:', error);
                 this.debugLog(`Auto-refresh warning: ${error.message}`);
                 this.updateRefreshTimestamp('retry soon');
+                // Ne hagyjuk befagyni - gyorsan továbbmegyünk
             }
-        }, this.autoRefreshInterval);
+        }, 60000); // Növeljük 60 másodpercre a gyakoriságot - kevesebb háttér aktivitás
+    }
+
+    // 2. TIMEOUT PROTECTED LOAD FUNCTION
+    async loadInitialDataRobustWithTimeout() {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 másodperc timeout
+        
+        try {
+            // Paralell loading with abort signal
+            const [articlesResponse, trendingResponse, dashboardResponse] = await Promise.allSettled([
+                this.loadArticlesRobust(this.currentCategory, 0, this.pageSize, controller.signal),
+                this.loadTrendingRobust(controller.signal),
+                this.loadDashboardDataRobust(controller.signal)
+            ]);
+            
+            // Process csak a sikeres válaszokat
+            if (articlesResponse.status === 'fulfilled' && articlesResponse.value.success) {
+                this.renderArticlesSmooth(articlesResponse.value.data.articles, true);
+                this.updateStats(articlesResponse.value.data.total);
+                this.hasMore = articlesResponse.value.data.has_more;
+            }
+            
+            if (trendingResponse.status === 'fulfilled' && trendingResponse.value.success) {
+                this.trending = trendingResponse.value.data.trending;
+                this.renderTrendingSmooth();
+            }
+            
+            if (dashboardResponse.status === 'fulfilled' && dashboardResponse.value.success) {
+                this.dashboardData = dashboardResponse.value.data;
+                this.updateSidebarDataSmooth();
+            }
+            
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
 
     // 🎖️ HERR CLAUS PROCESSING INDICATORS
@@ -1158,36 +1213,53 @@ class HirMagnet {
     }
 
     // 🎖️ HERR CLAUS ROBUST BACKGROUND UPDATES
+    // 7. HÁTTÉR UPDATEK OPTIMALIZÁLÁSA - REDUCE BACKGROUND NOISE
     startBackgroundUpdatesRobust() {
-        // Update trending every 5 minutes (only if not processing)
+        console.log('🎖️ Starting OPTIMIZED background updates...');
+        
+        // Update trending every 20 minutes (was 10)
         setInterval(async () => {
-            if (!this.isServerProcessing) {
-                const response = await this.loadTrendingRobust();
-                if (response.success) {
-                    this.trending = response.data.trending;
-                    this.renderTrendingSmooth();
+            if (!this.isServerProcessing && !this.isLoading) {
+                try {
+                    const controller = new AbortController();
+                    setTimeout(() => controller.abort(), 5000); // 5s timeout
+                    
+                    const response = await this.loadTrendingRobust(controller.signal);
+                    if (response.success) {
+                        this.trending = response.data.trending;
+                        this.renderTrendingSmooth();
+                    }
+                } catch (error) {
+                    console.log('🎖️ Background trending update skipped:', error.message);
                 }
             }
-        }, 10 * 60 * 1000); // Reduced from 5min to 10min
+        }, 20 * 60 * 1000); // 20 perc
 
-        // Update dashboard data every 10 minutes (only if not processing)
+        // Update dashboard data every 30 minutes (was 10)
         setInterval(async () => {
-            if (!this.isServerProcessing) {
-                const response = await this.loadDashboardDataRobust();
-                if (response.success) {
-                    this.dashboardData = response.data;
-                    this.updateSidebarDataSmooth();
+            if (!this.isServerProcessing && !this.isLoading) {
+                try {
+                    const controller = new AbortController();
+                    setTimeout(() => controller.abort(), 5000); // 5s timeout
+                    
+                    const response = await this.loadDashboardDataRobust(controller.signal);
+                    if (response.success) {
+                        this.dashboardData = response.data;
+                        this.updateSidebarDataSmooth();
+                    }
+                } catch (error) {
+                    console.log('🎖️ Background dashboard update skipped:', error.message);
                 }
             }
-        }, 10 * 60 * 1000);
+        }, 30 * 60 * 1000); // 30 perc
 
-        // Update stats every 2 minutes
+        // Update stats every 5 minutes (was 2)
         setInterval(() => {
             const updateEl = document.getElementById('lastUpdate');
             if (updateEl && !updateEl.textContent.includes('Gyorsítótár') && !updateEl.textContent.includes('Szerver')) {
-                updateEl.textContent = `Frissítve: ${new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit'})}`;
+                updateEl.textContent = `Frissítve: ${new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit'})} (háttér) ✅`;
             }
-        }, 2 * 60 * 1000);
+        }, 5 * 60 * 1000); // 5 perc
     }
 
     // *** ENHANCED MOCK DASHBOARD DATA - ONLY AS LAST RESORT ***
@@ -1339,6 +1411,36 @@ class HirMagnet {
     }
 
     // 🎖️ HERR CLAUS: CLEANUP METÓDUS
+    // 5. EMERGENCY BRAKE FUNCTION
+    emergencyUIUnfreeze() {
+        console.log('🎖️ EMERGENCY UI UNFREEZE ACTIVATED!');
+        
+        // Stop all timers
+        if (this.autoRefreshTimer) {
+            clearInterval(this.autoRefreshTimer);
+            this.autoRefreshTimer = null;
+        }
+        
+        if (this.processingCheckInterval) {
+            clearInterval(this.processingCheckInterval);
+            this.processingCheckInterval = null;
+        }
+        
+        // Reset states
+        this.isLoading = false;
+        this.isServerProcessing = false;
+        
+        // Hide all indicators
+        this.hideProcessingIndicator();
+        
+        // Restart with longer intervals
+        setTimeout(() => {
+            this.startProcessingMonitoring();
+            this.startAutoRefreshRobust();
+            console.log('🎖️ Emergency restart completed with safer intervals');
+        }, 2000);
+    }
+
     destroy() {
         this.stopAutoRefresh();
         if (this.processingCheckInterval) {
@@ -1415,6 +1517,8 @@ window.addEventListener('beforeunload', () => {
 });
 
 console.log('🎖️ RSS Navigation: openSource függvény betöltve!')
+
+// Emergency unfreeze available via console for debugging: window.hirmagnet.emergencyUIUnfreeze()
 
 // ===== HERR CLAUS ENGINEERING COMPLETE =====
 console.log('🎯 HERR CLAUS ROBUST FRONTEND + NON-BLOCKING BACKEND SYSTEM - OPERATIONAL!')
